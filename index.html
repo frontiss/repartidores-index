@@ -718,7 +718,7 @@ function renderCard(e,ctx){
   const repBadge=ctx==='office'&&e.repartidor?`<span class="badge" style="background:rgba(58,142,245,.1);color:var(--blue)">${esc(e.repartidor)}</span>`:'';
   const actionHtml=isDone
     ?(ctx==='office'?`<button class="btn-desmarcar" onclick="desmarcarEntrega(${e.id},event)">Desmarcar</button>`:'')
-    :`<button class="btn-entregar" onclick="openModal(${e.id},'${esc(e.cliente)}',event)">Marcar entregado</button>`;
+    :`<button class="btn-entregar" onclick="openModal(${e.id},'${esc(e.cliente)}',event,${e.importe||0})">Marcar entregado</button>`;
   const tipoBadge = e.tipo === 'factura'
     ? `<span class="badge badge-fac">FAC</span>`
     : `<span class="badge badge-alb">ALB</span>`;
@@ -747,15 +747,23 @@ function renderCard(e,ctx){
 function toggleCard(id){document.getElementById(`card-${id}`)?.classList.toggle('open');}
 
 // ── MODAL ────────────────────────────────────────
-function openModal(pickingId,clientName,ev){
+function openModal(pickingId,clientName,ev,importe){
   if(ev)ev.stopPropagation();
   state.pickingId=pickingId; state.formaPago='efectivo';
   document.getElementById('modal-client-name').textContent=clientName;
-  document.getElementById('toggle-cobrado').checked=false;
-  document.getElementById('cobro-fields').style.display='none';
-  document.getElementById('modal-nota').value=''; document.getElementById('modal-importe').value='';
+  document.getElementById('modal-nota').value='';
   document.querySelectorAll('.pago-opt').forEach(o=>o.classList.remove('active'));
   document.querySelector('.pago-opt').classList.add('active');
+  // Si hay importe (factura), precargarlo y activar cobro
+  if(importe && importe > 0){
+    document.getElementById('toggle-cobrado').checked=true;
+    document.getElementById('cobro-fields').style.display='block';
+    document.getElementById('modal-importe').value=importe.toFixed(2);
+  } else {
+    document.getElementById('toggle-cobrado').checked=false;
+    document.getElementById('cobro-fields').style.display='none';
+    document.getElementById('modal-importe').value='';
+  }
   document.getElementById('modal-entregar').classList.add('open');
 }
 function closeModal(){document.getElementById('modal-entregar').classList.remove('open');}
