@@ -558,7 +558,7 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
     <div class="assign-legend">
       <div class="legend-item"><div class="legend-dot albaran"></div>Albarán</div>
       <div class="legend-item"><div class="legend-dot factura"></div>Factura</div>
-      <div style="margin-left:auto;font-size:.7rem;color:var(--muted)">← desliza →</div>
+      <button id="btn-auto" onclick="autoAsignar()" style="margin-left:auto;background:var(--orange);color:#fff;font-family:var(--r-head);font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.35rem .75rem;border-radius:7px;white-space:nowrap;">⚡ Auto-asignar</button>
     </div>
     <div class="assign-pool-wrap">
       <div class="assign-pool-title">Sin asignar</div>
@@ -726,12 +726,25 @@ function buildAssignView() {
   const drivers=state.drivers; const pickings=state.allPickings;
   const poolRow=document.getElementById('pool-row');
   const colsEl=document.getElementById('assign-columns');
-  const unassigned=pickings.filter(p=>!p.repartidor_id);
+  const unassigned=[];
   const assignedMap={};
   drivers.forEach(d=>{assignedMap[d.id]=[];});
   pickings.forEach(p=>{
-    if (p.repartidor_id && assignedMap[p.repartidor_id]) assignedMap[p.repartidor_id].push(p);
-    else if (p.repartidor_id) unassigned.push(p);
+    if (p.repartidor_id && assignedMap[p.repartidor_id]) {
+      assignedMap[p.repartidor_id].push(p);
+    } else if (p.repartidor_id) {
+      unassigned.push(p);
+    } else {
+      // Sin asignar: intentar agrupar por carrier como sugerencia visual
+      const matched = matchCarrierToDriver(p.carrier, drivers);
+      if (matched) {
+        // Mostrar en columna del driver pero con estilo "sugerido" (sin guardar)
+        const clone = {...p, _sugerido: true, repartidor_id: matched.id, repartidor: matched.name};
+        assignedMap[matched.id].push(clone);
+      } else {
+        unassigned.push(p);
+      }
+    }
   });
   const poolSorted=[...unassigned].sort((a,b)=>a.tipo==='factura'?-1:b.tipo==='factura'?1:0);
   poolRow.innerHTML=poolSorted.length
@@ -766,13 +779,33 @@ function chipHTML(p) {
   const linesText=(p.lineas||[]).slice(0,2).map(l=>`${l.cantidad}× ${l.producto}`).join(', ');
   const more=(p.lineas||[]).length>2?` +${p.lineas.length-2}`:'';
   const importeHTML=p.tipo==='factura'&&p.importe_total?`<span class="chip-importe">€${p.importe_total.toFixed(2)}</span>`:'';
-  return `<div class="assign-chip tipo-${p.tipo}" id="chip-${p.tipo}-${p.id}" data-id="${p.id}" data-tipo="${p.tipo}" draggable="true">
+  const sugeridoStyle=p._sugerido?'border-style:dashed;opacity:.8;':''
+  return `<div class="assign-chip tipo-${p.tipo}" id="chip-${p.tipo}-${p.id}" data-id="${p.id}" data-tipo="${p.tipo}" draggable="true" style="${sugeridoStyle}">
     <div class="chip-top"><span class="chip-tipo ${p.tipo}">${p.tipo==='factura'?'FAC':'ALB'}</span><span class="chip-ref">${esc(p.nombre)}</span></div>
     <div class="chip-client">${esc(p.cliente)}</div>
     <div class="chip-bottom"><span class="chip-lines">${linesText?esc(linesText)+more:''}</span>${importeHTML}</div>
   </div>`;
 }
 function shortName(name) { return name.replace(/preventa/i,'PREV').replace(/repartidor/i,'REP'); }
+
+function matchCarrierToDriver(carrier, drivers) {
+  if (!carrier || !drivers.length) return null;
+  const cLower = carrier.toLowerCase();
+  // Extraer número del carrier: "PREVENTA 2" → "2"
+  const nums = cLower.match(/\d+/);
+  const num = nums ? nums[0] : null;
+  for (const d of drivers) {
+    const dStr = (d.login||'' + ' ' + d.name||'').toLowerCase();
+    const dNums = dStr.match(/\d+/g) || [];
+    if (num) {
+      if (num === '1' && dNums.length === 0) return d; // repartidor@ sin número → preventa 1
+      if (dNums.includes(num)) return d;
+    } else {
+      return drivers[0]; // sin número → primer repartidor
+    }
+  }
+  return null;
+}
 
 // ── DRAG DESKTOP ──
 function attachDragEvents() {
@@ -834,6 +867,20 @@ async function onTouchEnd(e) {
   const driverId=zone.classList.contains('assign-pool-row')?null:parseInt(zone.dataset.driverId);
   await assignItem(state.dragItem.id, state.dragItem.tipo, isNaN(driverId)?null:driverId);
   state.dragItem=null;
+}
+
+async function autoAsignar() {
+  const btn=document.getElementById('btn-auto');
+  btn.textContent='⏳ Asignando…'; btn.disabled=true;
+  try {
+    const data=await apiFetch('/oficina/auto-asignar',{method:'POST'});
+    showToast(`✓ ${data.asignados} asignados automáticamente`,'ok');
+    await loadAssignView();
+  } catch(e) {
+    showToast(`Error: ${e.message}`,'err');
+  } finally {
+    btn.textContent='⚡ Auto-asignar'; btn.disabled=false;
+  }
 }
 
 async function assignItem(id, tipo, userId) {
