@@ -406,6 +406,12 @@ function logout(){
   sessionStorage.clear();
   state={token:null,role:null,userName:'',userId:null,tab:'asignar',
     pickingId:null,formaPago:'efectivo',drivers:[],allPickings:[],resumenData:null,dragItem:null,preview:null};
+  // Reset login button
+  const btn=document.getElementById('btn-login');
+  btn.disabled=false; btn.textContent='Entrar';
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
   showScreen('login');
 }
 function enterApp(){
@@ -758,7 +764,7 @@ function openModal(pickingId,clientName,ev,importe){
   if(importe && importe > 0){
     document.getElementById('toggle-cobrado').checked=true;
     document.getElementById('cobro-fields').style.display='block';
-    document.getElementById('modal-importe').value=importe.toFixed(2);
+    document.getElementById('modal-importe').value=parseFloat(importe).toFixed(2);
   } else {
     document.getElementById('toggle-cobrado').checked=false;
     document.getElementById('cobro-fields').style.display='none';
