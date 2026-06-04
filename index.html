@@ -92,6 +92,8 @@ input,textarea{font-family:inherit;}
 .badge-done{background:rgba(30,200,110,.15);color:var(--green);}
 .badge-pending{background:rgba(245,130,10,.12);color:var(--orange-l);}
 .badge-cobrado{background:rgba(58,142,245,.12);color:var(--blue);}
+.badge-alb{background:rgba(245,130,10,.15);color:var(--orange);font-size:.6rem;}
+.badge-fac{background:rgba(14,207,207,.15);color:var(--teal);font-size:.6rem;}
 .card-arrow{color:var(--muted2);font-size:.9rem;transition:transform .2s;flex-shrink:0;}
 .delivery-card.open .card-arrow{transform:rotate(90deg);}
 .card-body{display:none;padding:0 1rem 1rem;border-top:1px solid var(--border);}
@@ -717,7 +719,11 @@ function renderCard(e,ctx){
   const actionHtml=isDone
     ?(ctx==='office'?`<button class="btn-desmarcar" onclick="desmarcarEntrega(${e.id},event)">Desmarcar</button>`:'')
     :`<button class="btn-entregar" onclick="openModal(${e.id},'${esc(e.cliente)}',event)">Marcar entregado</button>`;
+  const tipoBadge = e.tipo === 'factura'
+    ? `<span class="badge badge-fac">FAC</span>`
+    : `<span class="badge badge-alb">ALB</span>`;
   const badges=[
+    tipoBadge,
     isDone?`<span class="badge badge-done">✓ Entregado</span>`:`<span class="badge badge-pending">Pendiente</span>`,
     e.cobrado?`<span class="badge badge-cobrado">Cobrado</span>`:'',
     repBadge,
