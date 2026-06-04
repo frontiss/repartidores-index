@@ -940,7 +940,7 @@ function renderCard(e, ctx) {
       <div class="card-status ${isDone?'done':'pending'}">${isDone?'✓':'→'}</div>
       <div class="card-info">
         <div class="card-client">${esc(e.cliente)}</div>
-        <div class="card-meta"><span class="card-ref">${e.nombre}</span>${badges}</div>
+        <div class="card-meta"><span class="card-ref">${e.nombre}</span>${badges}${e.importe>0?`<span style="font-family:var(--r-mono);font-size:.75rem;font-weight:600;color:var(--teal)">€${parseFloat(e.importe).toFixed(2)}</span>`:''}</div>
       </div>
       <div class="card-arrow">›</div>
     </div>
