@@ -760,14 +760,12 @@ function openModal(pickingId,clientName,ev,importe){
   document.getElementById('modal-nota').value='';
   document.querySelectorAll('.pago-opt').forEach(o=>o.classList.remove('active'));
   document.querySelector('.pago-opt').classList.add('active');
-  // Si hay importe (factura), precargarlo y activar cobro
+  // Pre-cargar importe si es factura, pero el toggle lo activa el repartidor
+  document.getElementById('toggle-cobrado').checked=false;
+  document.getElementById('cobro-fields').style.display='none';
   if(importe && importe > 0){
-    document.getElementById('toggle-cobrado').checked=true;
-    document.getElementById('cobro-fields').style.display='block';
     document.getElementById('modal-importe').value=parseFloat(importe).toFixed(2);
   } else {
-    document.getElementById('toggle-cobrado').checked=false;
-    document.getElementById('cobro-fields').style.display='none';
     document.getElementById('modal-importe').value='';
   }
   document.getElementById('modal-entregar').classList.add('open');
