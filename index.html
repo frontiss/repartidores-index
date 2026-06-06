@@ -379,6 +379,26 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
 .chip-lines { font-size: .72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 .chip-importe { font-family: var(--r-mono); font-size: .75rem; color: var(--teal); font-weight: 500; flex-shrink: 0; margin-left: .4rem; }
 
+/* ── DATE FILTER ── */
+.date-filter {
+  display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+  padding:.75rem 1rem; background:var(--surface); border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.date-filter label { font-size:.72rem; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+.date-input {
+  background:var(--surface2); border:1.5px solid var(--border); border-radius:8px;
+  color:var(--text); font-size:.88rem; font-family:var(--r-mono);
+  padding:.4rem .6rem; outline:none; height:38px; flex:1; min-width:120px;
+}
+.date-input:focus { border-color:var(--orange); }
+.btn-filter {
+  background:var(--orange); color:#fff; font-family:var(--r-head);
+  font-size:.85rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  padding:0 .9rem; height:38px; border-radius:8px; white-space:nowrap; flex-shrink:0;
+}
+.btn-filter:active { background:var(--orange-d); }
+
 /* ── EMPTY / LOADING ── */
 .empty-state { text-align: center; padding: 3rem 1rem; }
 .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
@@ -926,21 +946,60 @@ async function loadResumen() {
   }
 }
 
+function todosDateBar() {
+  const hoy=new Date().toISOString().slice(0,10);
+  return `<div class="date-filter">
+    <label>Desde</label>
+    <input type="date" class="date-input" id="todos-desde" value="${hoy}" max="${hoy}">
+    <label>Hasta</label>
+    <input type="date" class="date-input" id="todos-hasta" value="${hoy}" max="${hoy}">
+    <button class="btn-filter" onclick="loadTodos()">Buscar</button>
+  </div>`;
+}
+
 async function loadTodos() {
   const c=document.getElementById('office-content');
-  c.innerHTML=`<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando…</div></div>`;
+  const hoy=new Date().toISOString().slice(0,10);
+  const desdeEl=document.getElementById('todos-desde');
+  const hastaEl=document.getElementById('todos-hasta');
+  const desde=desdeEl?desdeEl.value:hoy;
+  const hasta=hastaEl?hastaEl.value:hoy;
+
+  // Keep the date filter bar if it exists, replace only the list below
+  const existingFilter=document.getElementById('todos-desde');
+  if (!existingFilter) {
+    c.innerHTML=todosDateBar()+`<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando…</div></div>`;
+  } else {
+    // Replace only the list part
+    const bar=c.querySelector('.date-filter');
+    c.innerHTML='';
+    c.appendChild(bar);
+    const loading=document.createElement('div');
+    loading.className='loading-spinner';
+    loading.innerHTML=`<div class="spinner"></div><div class="loading-text">Cargando…</div>`;
+    c.appendChild(loading);
+  }
+
   try {
-    const data=await apiFetch('/oficina/resumen');
-    document.getElementById('office-date').textContent=formatDate(data.fecha);
-    const all=(data.repartidores||[]).flatMap(r=>r.entregas);
+    const data=await apiFetch(`/oficina/todos?fecha_desde=${desde}&fecha_hasta=${hasta}`);
+    const all=data.entregas||[];
     const pending=all.filter(e=>!e.entregado); const done=all.filter(e=>e.entregado);
-    let html='';
+    let html=todosDateBar();
+    html+=`<div class="stats-bar" style="margin-top:.75rem">
+      <div class="stat-card"><div class="stat-num orange">${data.total}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-num green">${data.entregadas}</div><div class="stat-label">Entregados</div></div>
+      <div class="stat-card"><div class="stat-num red">${data.pendientes}</div><div class="stat-label">Pendientes</div></div>
+    </div>`;
     if (pending.length) { html+=`<div class="section-header"><div class="section-title">Pendientes</div><div class="section-count">${pending.length}</div></div>`; pending.forEach(e=>{html+=renderCard(e,'office');}); }
     if (done.length) { html+=`<div class="section-header" style="margin-top:1rem"><div class="section-title">Entregados</div><div class="section-count">${done.length}</div></div>`; done.forEach(e=>{html+=renderCard(e,'office');}); }
-    if (!all.length) html=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Sin entregas</div></div>`;
+    if (!all.length) html+=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Sin entregas en este periodo</div></div>`;
     c.innerHTML=html;
+    // Restore date values after re-render
+    document.getElementById('todos-desde').value=desde;
+    document.getElementById('todos-hasta').value=hasta;
   } catch(e) {
-    c.innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
+    const bar=todosDateBar();
+    c.innerHTML=bar+`<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
   }
 }
 
