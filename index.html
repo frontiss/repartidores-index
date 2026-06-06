@@ -62,6 +62,13 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
   justify-content: center; align-items: center;
   padding: 1.5rem;
   background: linear-gradient(160deg, #fff8f0 0%, #f0f2f7 60%);
+  position: relative;
+}
+.login-theme-btn {
+  position: absolute; top: calc(1rem + var(--safe-t)); right: 1rem;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 1rem; padding: .4rem .6rem;
+  cursor: pointer;
 }
 .login-logo {
   display: flex; align-items: center; gap: 14px; margin-bottom: 2.5rem;
@@ -511,6 +518,7 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
 
 <!-- LOGIN -->
 <div id="screen-login" class="screen active">
+  <button class="login-theme-btn" onclick="toggleTheme()" id="theme-btn-login">🌙</button>
   <div class="login-logo">
     <div class="logo-mark"></div>
     <div class="logo-name">Comercial<br><span>Puchol</span></div>
@@ -541,7 +549,10 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
         <div class="header-sub" id="driver-name">—</div>
       </div>
     </div>
-    <button class="btn-logout" onclick="logout()">Salir</button>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <button class="btn-theme" onclick="toggleTheme()" id="theme-btn-driver" title="Modo oscuro">🌙</button>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
   </div>
   <div class="date-bar">
     <div class="date-text" id="driver-date">—</div>
@@ -562,7 +573,10 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
         <div class="header-sub" id="office-name">—</div>
       </div>
     </div>
-    <button class="btn-logout" onclick="logout()">Salir</button>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <button class="btn-theme" onclick="toggleTheme()" id="theme-btn-office" title="Modo oscuro">🌙</button>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
   </div>
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('asignar')" id="tab-asignar">Asignar</button>
@@ -682,6 +696,27 @@ async function apiFetch(path, options={}) {
   if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
   return data;
 }
+
+// ── THEME ──
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('rp_theme', isDark ? 'dark' : 'light');
+  updateThemeButtons(isDark);
+}
+function updateThemeButtons(isDark) {
+  const icon = isDark ? '☀️' : '🌙';
+  ['theme-btn-driver','theme-btn-office','theme-btn-login'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = icon;
+  });
+}
+(function restoreTheme() {
+  const saved = localStorage.getItem('rp_theme');
+  if (saved === 'dark') {
+    document.body.classList.add('dark');
+    updateThemeButtons(true);
+  }
+})();
 
 // ── AUTH ──
 async function doLogin() {
