@@ -594,7 +594,7 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
   </div>
 
   <!-- TAB MAPA -->
-  <div id="mapa-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+  <div id="mapa-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;">
     <div id="map-container" style="flex:1;position:relative;">
       <div id="leaflet-map" style="width:100%;height:100%;"></div>
       <div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:10;">
@@ -604,11 +604,13 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
         </div>
       </div>
     </div>
-    <div id="map-bottom" style="background:var(--surface);border-top:1px solid var(--border);padding:.75rem 1rem;flex-shrink:0;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-      <div id="map-stats" style="font-size:.8rem;color:var(--muted);flex:1;"></div>
-      <button id="btn-gmaps" onclick="openGoogleMaps()" style="background:var(--blue);color:#fff;font-family:var(--r-head);font-size:.85rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.5rem 1rem;border-radius:8px;white-space:nowrap;display:none;">
-        Abrir en Google Maps
-      </button>
+    <div id="map-bottom" style="background:var(--surface);border-top:1px solid var(--border);padding:.6rem .75rem;flex-shrink:0;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+      <div id="map-stats" style="font-size:.78rem;color:var(--muted);flex:1;min-width:120px;"></div>
+      <button onclick="toggleTimeline()" style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text2);font-family:var(--r-head);font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.45rem .8rem;border-radius:8px;white-space:nowrap;height:38px;">⏱ Tiempos</button>
+      <button id="btn-gmaps" onclick="openGoogleMaps()" style="background:var(--blue);color:#fff;font-family:var(--r-head);font-size:.82rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:.45rem .9rem;border-radius:8px;white-space:nowrap;height:38px;display:none;">Google Maps</button>
+    </div>
+    <div id="timeline-panel" style="display:none;background:var(--surface);border-top:2px solid var(--orange);overflow-y:auto;max-height:260px;padding:.75rem 1rem;flex-shrink:0;">
+      <div id="timeline-content"></div>
     </div>
   </div>
 
