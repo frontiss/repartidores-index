@@ -977,7 +977,7 @@ function renderCard(e, ctx) {
   const tipoBadge=e.tipo==='factura'?`<span class="badge badge-fac">FAC</span>`:`<span class="badge badge-alb">ALB</span>`;
   const actionHtml=isDone
     ?(ctx==='office'?`<button class="btn-desmarcar" onclick="desmarcarEntrega(${e.id},event)">Desmarcar</button>`:'')
-    :`<button class="btn-entregar" onclick="openModal(${e.id},'${esc(e.cliente)}',event,${e.importe||0})">Marcar entregado</button>`;
+    :`<button class="btn-entregar" onclick="openModal(${e.id},'${esc(e.cliente)}',event,${e.importe||0},'${e.tipo||"albaran"}')">Marcar entregado</button>`;
   const badges=[
     tipoBadge,
     isDone?`<span class="badge badge-done">✓ Entregado</span>`:`<span class="badge badge-pending">Pendiente</span>`,
@@ -1003,9 +1003,9 @@ function renderCard(e, ctx) {
 function toggleCard(id) { document.getElementById(`card-${id}`)?.classList.toggle('open'); }
 
 // ── MODAL ──
-function openModal(pickingId, clientName, ev, importe) {
+function openModal(pickingId, clientName, ev, importe, tipo) {
   if (ev) ev.stopPropagation();
-  state.pickingId=pickingId; state.formaPago='efectivo';
+  state.pickingId=pickingId; state.pickingTipo=tipo||'albaran'; state.formaPago='efectivo';
   document.getElementById('modal-client-name').textContent=clientName;
   document.getElementById('modal-nota').value='';
   document.querySelectorAll('.pago-opt').forEach(o=>o.classList.remove('active'));
@@ -1025,7 +1025,8 @@ async function confirmarEntrega() {
   const nota=document.getElementById('modal-nota').value.trim();
   btn.disabled=true; btn.textContent='Guardando…';
   try {
-    await apiFetch(`/entregas/${state.pickingId}/entregar`, {method:'POST', body:JSON.stringify({cobrado, importe:cobrado?importe:null, forma_pago:cobrado?state.formaPago:null, nota:nota||null})});
+    const endpoint = state.pickingTipo==='factura' ? `/facturas/${state.pickingId}/entregar` : `/entregas/${state.pickingId}/entregar`;
+    await apiFetch(endpoint, {method:'POST', body:JSON.stringify({cobrado, importe:cobrado?importe:null, forma_pago:cobrado?state.formaPago:null, nota:nota||null})});
     closeModal(); showToast('Entrega confirmada ✓','ok');
     if (state.role==='repartidor') loadDriverDeliveries(); else refreshCurrentTab();
   } catch(e) { showToast(e.message,'err'); }
