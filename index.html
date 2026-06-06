@@ -1030,6 +1030,7 @@ async function loadDriverDeliveries() {
 function renderCard(e, ctx) {
   const isDone=e.entregado;
   const lineas=(e.lineas||[]).map(l=>`<div class="card-line"><span>${esc(l.producto)}</span><span class="line-qty">${l.cantidad} ud.</span></div>`).join('');
+  const horaHtml=e.entregado&&e.hora_entrega?`<span style="font-family:var(--r-mono);font-size:.7rem;color:var(--green);font-weight:500;background:var(--green-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid rgba(22,163,74,.2)">🕐 ${formatHora(e.hora_entrega)}</span>`:'';
   const notaHtml=e.nota?`<div class="card-note">📌 ${esc(e.nota)}</div>`:'';
   const notaRepHtml=e.nota_repartidor?`<div class="card-note" style="background:var(--blue-bg);border-left-color:var(--blue)">💬 ${esc(e.nota_repartidor)}</div>`:'';
   const repBadge=ctx==='office'&&e.repartidor?`<span class="badge" style="background:var(--blue-bg);color:var(--blue);border:1px solid rgba(37,99,235,.15)">${esc(e.repartidor)}</span>`:'';
@@ -1041,6 +1042,7 @@ function renderCard(e, ctx) {
     tipoBadge,
     isDone?`<span class="badge badge-done">✓ Entregado</span>`:`<span class="badge badge-pending">Pendiente</span>`,
     e.cobrado?`<span class="badge badge-cobrado">Cobrado</span>`:'',
+    horaHtml,
     repBadge,
   ].join('');
   return `<div class="delivery-card ${isDone?'entregado':''}" id="card-${e.id}">
@@ -1099,6 +1101,13 @@ async function desmarcarEntrega(id, ev) {
 }
 
 // ── UTILS ──
+function formatHora(odooDatetime) {
+  if (!odooDatetime) return '';
+  // Odoo returns UTC datetime as "YYYY-MM-DD HH:MM:SS"
+  const d = new Date(odooDatetime.replace(' ', 'T') + 'Z');
+  return d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+}
+
 function formatDate(iso) { if(!iso)return''; const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}); }
 function esc(s) { return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 let toastTimer;
