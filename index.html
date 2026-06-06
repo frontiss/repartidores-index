@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#ffffff">
 <title>Repartos · Comercial Puchol</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;900&family=Barlow:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -567,6 +568,7 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
     <button class="tab-btn active" onclick="switchTab('asignar')" id="tab-asignar">Asignar</button>
     <button class="tab-btn" onclick="switchTab('resumen')" id="tab-resumen">Resumen</button>
     <button class="tab-btn" onclick="switchTab('todos')" id="tab-todos">Todos</button>
+    <button class="tab-btn" onclick="switchTab('mapa')" id="tab-mapa">🗺 Mapa</button>
   </div>
   <div class="date-bar">
     <div class="date-text" id="office-date">—</div>
@@ -589,6 +591,25 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
       </div>
     </div>
     <div class="assign-cols-scroll" id="assign-columns"></div>
+  </div>
+
+  <!-- TAB MAPA -->
+  <div id="mapa-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+    <div id="map-container" style="flex:1;position:relative;">
+      <div id="leaflet-map" style="width:100%;height:100%;"></div>
+      <div id="map-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:10;">
+        <div style="text-align:center">
+          <div class="spinner"></div>
+          <div class="loading-text" style="margin-top:.5rem">Geocodificando direcciones…</div>
+        </div>
+      </div>
+    </div>
+    <div id="map-bottom" style="background:var(--surface);border-top:1px solid var(--border);padding:.75rem 1rem;flex-shrink:0;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+      <div id="map-stats" style="font-size:.8rem;color:var(--muted);flex:1;"></div>
+      <button id="btn-gmaps" onclick="openGoogleMaps()" style="background:var(--blue);color:#fff;font-family:var(--r-head);font-size:.85rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.5rem 1rem;border-radius:8px;white-space:nowrap;display:none;">
+        Abrir en Google Maps
+      </button>
+    </div>
   </div>
 
   <!-- TAB RESUMEN / TODOS -->
@@ -639,6 +660,7 @@ input, textarea { font-family: inherit; -webkit-appearance: none; border-radius:
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 const API = 'https://web-production-b097e.up.railway.app';
 
@@ -709,16 +731,22 @@ function switchTab(tab) {
   document.getElementById(`tab-${tab}`).classList.add('active');
   const av=document.getElementById('assign-view');
   const ca=document.getElementById('office-content');
+  const mv=document.getElementById('mapa-view');
+  av.classList.remove('visible'); av.style.display='none';
+  ca.style.display='none'; mv.style.display='none';
   if (tab==='asignar') {
-    av.classList.add('visible'); av.style.display=''; ca.style.display='none'; loadAssignView();
+    av.classList.add('visible'); av.style.display=''; loadAssignView();
+  } else if (tab==='mapa') {
+    mv.style.display='flex'; loadMapa();
   } else {
-    av.classList.remove('visible'); av.style.display='none'; ca.style.display='';
+    ca.style.display='';
     if (tab==='resumen') loadResumen(); else loadTodos();
   }
 }
 function refreshCurrentTab() {
   if (state.tab==='asignar') loadAssignView();
   else if (state.tab==='resumen') loadResumen();
+  else if (state.tab==='mapa') loadMapa();
   else loadTodos();
 }
 
@@ -1079,15 +1107,35 @@ function openModal(pickingId, clientName, ev, importe, tipo) {
 function closeModal() { document.getElementById('modal-entregar').classList.remove('open'); }
 function onToggleCobrado() { document.getElementById('cobro-fields').style.display=document.getElementById('toggle-cobrado').checked?'block':'none'; }
 function selectPago(tipo, el) { state.formaPago=tipo; document.querySelectorAll('.pago-opt').forEach(o=>o.classList.remove('active')); el.classList.add('active'); }
+async function getGPS() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve({lat:null, lng:null}); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({lat: pos.coords.latitude, lng: pos.coords.longitude}),
+      ()  => resolve({lat:null, lng:null}),
+      {timeout:5000, maximumAge:0, enableHighAccuracy:true}
+    );
+  });
+}
+
 async function confirmarEntrega() {
   const btn=document.getElementById('btn-confirm');
   const cobrado=document.getElementById('toggle-cobrado').checked;
   const importe=parseFloat(document.getElementById('modal-importe').value)||0;
   const nota=document.getElementById('modal-nota').value.trim();
-  btn.disabled=true; btn.textContent='Guardando…';
+  btn.disabled=true; btn.textContent='📍 Obteniendo GPS…';
+
+  // Capturar GPS antes de enviar
+  const {lat, lng} = await getGPS();
+
+  btn.textContent='Guardando…';
   try {
     const endpoint = state.pickingTipo==='factura' ? `/facturas/${state.pickingId}/entregar` : `/entregas/${state.pickingId}/entregar`;
-    await apiFetch(endpoint, {method:'POST', body:JSON.stringify({cobrado, importe:cobrado?importe:null, forma_pago:cobrado?state.formaPago:null, nota:nota||null})});
+    await apiFetch(endpoint, {method:'POST', body:JSON.stringify({
+      cobrado, importe:cobrado?importe:null,
+      forma_pago:cobrado?state.formaPago:null,
+      nota:nota||null, lat, lng
+    })});
     closeModal(); showToast('Entrega confirmada ✓','ok');
     if (state.role==='repartidor') loadDriverDeliveries(); else refreshCurrentTab();
   } catch(e) { showToast(e.message,'err'); }
@@ -1098,6 +1146,172 @@ async function desmarcarEntrega(id, ev) {
   if (!confirm('¿Desmarcar esta entrega?')) return;
   try { await apiFetch(`/entregas/${id}/desmarcar`,{method:'POST'}); showToast('Entrega desmarcada','ok'); refreshCurrentTab(); }
   catch(e) { showToast(e.message,'err'); }
+}
+
+// ── MAPA ──
+let leafletMap = null;
+let mapaMarkers = [];
+let mapaPuntos = [];
+const DRIVER_COLORS = ['#f5820a','#2563eb','#7c3aed','#16a34a','#dc2626'];
+
+async function loadMapa() {
+  document.getElementById('map-loading').style.display='flex';
+  document.getElementById('btn-gmaps').style.display='none';
+  document.getElementById('map-stats').textContent='';
+  mapaPuntos = [];
+
+  try {
+    const hoy = new Date().toISOString().slice(0,10);
+    const data = await apiFetch(`/oficina/mapa?fecha=${hoy}`);
+    const puntos = (data.puntos || []).filter(p => p.direccion);
+
+    if (!puntos.length) {
+      document.getElementById('map-loading').innerHTML=`<div style="text-align:center"><div style="font-size:2rem">📍</div><div style="color:var(--muted);margin-top:.5rem">No hay entregas con dirección hoy</div></div>`;
+      return;
+    }
+
+    // Init map
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map').setView([39.5, -0.4], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(leafletMap);
+    } else {
+      mapaMarkers.forEach(m => m.remove());
+      mapaMarkers = [];
+    }
+
+    // Get unique drivers
+    const drivers = [...new Set(puntos.map(p => p.repartidor))];
+
+    const gpsPoints = data.gps_puntos || [];
+
+    // Init map
+    if (!leafletMap) {
+      leafletMap = L.map('leaflet-map').setView([39.5, -0.4], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap', maxZoom:19
+      }).addTo(leafletMap);
+    } else {
+      mapaMarkers.forEach(m => m.remove());
+      mapaMarkers = [];
+    }
+
+    const bounds = [];
+    let gpsCount = 0;
+
+    // 1. Mostrar puntos GPS exactos (marcador sólido con pin)
+    for (const g of gpsPoints) {
+      const driverIdx = drivers.indexOf(g.repartidor) % DRIVER_COLORS.length;
+      const color = DRIVER_COLORS[driverIdx];
+      const hora = g.hora ? formatHora(g.hora) : '';
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:36px;height:36px">
+          <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.35);transform:rotate(-45deg)"></div>
+          <span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);font-size:14px">📍</span>
+        </div>`,
+        iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-36]
+      });
+
+      const marker = L.marker([g.lat, g.lng], {icon})
+        .addTo(leafletMap)
+        .bindPopup(`
+          <div style="font-family:sans-serif;min-width:180px">
+            <div style="background:${color};color:#fff;padding:.3rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:.4rem">📍 UBICACIÓN EXACTA DE ENTREGA</div>
+            <div style="font-weight:700;font-size:.9rem">${g.cliente}</div>
+            <div style="color:#666;font-size:.8rem">${g.nombre}</div>
+            ${hora ? `<div style="color:#16a34a;font-size:.8rem;margin-top:.2rem">🕐 ${hora}</div>` : ''}
+            <div style="color:#f5820a;font-size:.78rem;margin-top:.2rem">${g.repartidor}</div>
+          </div>
+        `);
+
+      mapaMarkers.push(marker);
+      bounds.push([g.lat, g.lng]);
+      mapaPuntos.push({...g, _gps: true});
+      gpsCount++;
+    }
+
+    // 2. Geocodificar direcciones para los que NO tienen GPS (en background)
+    document.getElementById('map-loading').style.display='none';
+    const sinGps = puntos.filter(p =>
+      p.direccion && !gpsPoints.find(g => g.id === p.id && g.tipo === p.tipo)
+    );
+
+    if (bounds.length) leafletMap.fitBounds(bounds, {padding:[30,30]});
+    const total = gpsCount + sinGps.length;
+    document.getElementById('map-stats').textContent=
+      `📍 ${gpsCount} GPS exactos · 🏠 geocodificando ${sinGps.length} direcciones…`;
+    if (mapaPuntos.length) document.getElementById('btn-gmaps').style.display='';
+
+    // Geocodificar en background sin bloquear
+    let geocodedCount = 0;
+    for (const p of sinGps) {
+      try {
+        const q = encodeURIComponent(p.direccion + ', España');
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q}&limit=1`,
+          {headers:{'Accept-Language':'es'}});
+        const results = await r.json();
+        if (results.length) {
+          const lat = parseFloat(results[0].lat), lng = parseFloat(results[0].lon);
+          const driverIdx = drivers.indexOf(p.repartidor) % DRIVER_COLORS.length;
+          const color = DRIVER_COLORS[driverIdx];
+          const hora = p.hora ? formatHora(p.hora) : '';
+          const tipo = p.tipo === 'factura' ? 'FAC' : 'ALB';
+
+          // Marcador de dirección (cuadrado, más pequeño)
+          const icon = L.divIcon({
+            className: '',
+            html: `<div style="width:28px;height:28px;border-radius:6px;background:${color};opacity:.7;border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:10px;font-weight:700;color:#fff">${tipo}</span>
+            </div>`,
+            iconSize:[28,28], iconAnchor:[14,14], popupAnchor:[0,-14]
+          });
+
+          const marker = L.marker([lat, lng], {icon, opacity:0.75})
+            .addTo(leafletMap)
+            .bindPopup(`
+              <div style="font-family:sans-serif;min-width:180px">
+                <div style="background:#999;color:#fff;padding:.3rem .5rem;border-radius:4px;font-size:.7rem;font-weight:700;margin-bottom:.4rem">🏠 Dirección del cliente</div>
+                <div style="font-weight:700;font-size:.9rem">${p.cliente}</div>
+                <div style="color:#666;font-size:.8rem">${p.nombre}</div>
+                ${hora ? `<div style="color:#16a34a;font-size:.8rem">🕐 ${hora}</div>` : ''}
+                ${p.importe ? `<div style="color:#2563eb;font-size:.8rem;font-weight:600">€${parseFloat(p.importe).toFixed(2)}</div>` : ''}
+                <div style="color:#f5820a;font-size:.78rem;margin-top:.2rem">${p.repartidor}</div>
+                <div style="font-size:.7rem;color:#aaa">${p.direccion}</div>
+              </div>
+            `);
+
+          mapaMarkers.push(marker);
+          bounds.push([lat, lng]);
+          mapaPuntos.push({...p, lat, lng});
+          geocodedCount++;
+          if (bounds.length > 1) leafletMap.fitBounds(bounds, {padding:[30,30]});
+        }
+        await new Promise(res => setTimeout(res, 350));
+      } catch(e) { /* skip */ }
+
+      document.getElementById('map-stats').textContent=
+        `📍 ${gpsCount} GPS exactos · 🏠 ${geocodedCount}/${sinGps.length} direcciones cargadas`;
+    }
+
+    document.getElementById('map-stats').textContent=
+      `📍 ${gpsCount} GPS exactos · 🏠 ${geocodedCount} por dirección · ${drivers.join(', ')}`;
+    if (mapaPuntos.length) document.getElementById('btn-gmaps').style.display='';
+
+    setTimeout(() => leafletMap.invalidateSize(), 100);
+  } catch(e) {
+    document.getElementById('map-loading').innerHTML=`<div style="text-align:center;color:var(--red)">${e.message}</div>`;
+  }
+}
+
+function openGoogleMaps() {
+  if (!mapaPuntos.length) return;
+  const addresses = mapaPuntos.map(p => encodeURIComponent(p.direccion));
+  const base = 'https://www.google.com/maps/dir/';
+  const url = base + addresses.join('/');
+  window.open(url, '_blank');
 }
 
 // ── UTILS ──
