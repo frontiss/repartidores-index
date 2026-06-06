@@ -1125,12 +1125,10 @@ async function confirmarEntrega() {
   const cobrado=document.getElementById('toggle-cobrado').checked;
   const importe=parseFloat(document.getElementById('modal-importe').value)||0;
   const nota=document.getElementById('modal-nota').value.trim();
-  btn.disabled=true; btn.textContent='📍 Obteniendo GPS…';
+  btn.disabled=true; btn.textContent='Guardando…';
 
-  // Capturar GPS antes de enviar
+  // Capturar GPS en silencio (sin mostrar nada al repartidor)
   const {lat, lng} = await getGPS();
-
-  btn.textContent='Guardando…';
   try {
     const endpoint = state.pickingTipo==='factura' ? `/facturas/${state.pickingId}/entregar` : `/entregas/${state.pickingId}/entregar`;
     await apiFetch(endpoint, {method:'POST', body:JSON.stringify({
