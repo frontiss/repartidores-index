@@ -1306,6 +1306,69 @@ async function loadMapa() {
   }
 }
 
+function toggleTimeline() {
+  const p = document.getElementById('timeline-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  if (p.style.display === 'block') buildTimeline();
+  // Resize map
+  setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 200);
+}
+
+function buildTimeline() {
+  const el = document.getElementById('timeline-content');
+  // Use GPS points if available, otherwise skip
+  const pts = mapaPuntos.filter(p => p.hora).sort((a,b) => a.hora > b.hora ? 1 : -1);
+  if (!pts.length) { el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:1rem">No hay datos de hora disponibles aún</div>'; return; }
+
+  // Group by driver
+  const drivers = [...new Set(pts.map(p => p.repartidor))];
+  let html = '';
+
+  drivers.forEach((driver, di) => {
+    const dPts = pts.filter(p => p.repartidor === driver);
+    const color = DRIVER_COLORS[di % DRIVER_COLORS.length];
+    html += `<div style="margin-bottom:1rem">
+      <div style="font-family:var(--r-head);font-size:.9rem;font-weight:800;text-transform:uppercase;color:${color};margin-bottom:.5rem">${driver}</div>`;
+
+    dPts.forEach((p, i) => {
+      const hora = formatHora(p.hora);
+      const gpsTag = p._gps ? '📍' : '🏠';
+      html += `<div style="display:flex;align-items:flex-start;gap:.6rem;padding:.35rem 0;border-bottom:1px solid var(--border)">
+        <div style="width:44px;font-family:var(--r-mono);font-size:.78rem;color:var(--green);font-weight:600;flex-shrink:0">${hora}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${gpsTag} ${p.cliente}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${p.nombre}</div>
+        </div>
+        ${p.importe ? `<div style="font-family:var(--r-mono);font-size:.75rem;color:var(--blue);flex-shrink:0">€${parseFloat(p.importe).toFixed(2)}</div>` : ''}
+      </div>`;
+
+      // Time to next delivery
+      if (i < dPts.length - 1) {
+        const t1 = new Date(dPts[i].hora.replace(' ','T')+'Z');
+        const t2 = new Date(dPts[i+1].hora.replace(' ','T')+'Z');
+        const mins = Math.round((t2-t1)/60000);
+        if (mins > 0 && mins < 300) {
+          html += `<div style="padding:.2rem 0 .2rem 50px;font-size:.72rem;color:var(--muted)">↓ ${mins} min</div>`;
+        }
+      }
+    });
+
+    // Total time
+    if (dPts.length > 1) {
+      const t1 = new Date(dPts[0].hora.replace(' ','T')+'Z');
+      const tN = new Date(dPts[dPts.length-1].hora.replace(' ','T')+'Z');
+      const totalMins = Math.round((tN-t1)/60000);
+      const h = Math.floor(totalMins/60), m = totalMins%60;
+      html += `<div style="margin-top:.4rem;padding:.35rem .6rem;background:var(--surface2);border-radius:6px;font-size:.78rem;color:var(--muted)">
+        Total ruta: <strong style="color:${color}">${h>0?h+'h ':''} ${m}min</strong> · ${dPts.length} entregas
+      </div>`;
+    }
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
 function openGoogleMaps() {
   if (!mapaPuntos.length) return;
   const addresses = mapaPuntos.map(p => encodeURIComponent(p.direccion));
