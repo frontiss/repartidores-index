@@ -442,6 +442,12 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
         <input type="number" class="importe-input" id="modal-importe" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
       </div>
     </div>
+    <div id="parcial-row" style="display:none;margin-bottom:1.1rem;">
+      <div class="toggle-row" style="background:var(--blue-bg);border-color:rgba(37,99,235,.2);">
+        <span class="toggle-label" style="font-size:.95rem;">&#x1F4B0; Pago a cuenta (parcial)</span>
+        <label class="toggle"><input type="checkbox" id="toggle-parcial" onchange="onToggleParcial()"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
     <div class="modal-group">
       <div class="modal-label">Nota (opcional)</div>
       <textarea class="nota-input" id="modal-nota" placeholder="Incidencia, cliente ausente&#x2026;"></textarea>
@@ -804,11 +810,27 @@ function openModal(pickingId,clientName,ev,importe,tipo){
   document.querySelector('.pago-opt').classList.add('active');
   document.getElementById('toggle-cobrado').checked=false;
   document.getElementById('cobro-fields').style.display='none';
+  var pr=document.getElementById('parcial-row');if(pr)pr.style.display='none';
+  var tp=document.getElementById('toggle-parcial');if(tp)tp.checked=false;
   document.getElementById('modal-importe').value=importe&&importe>0?parseFloat(importe).toFixed(2):'';
   document.getElementById('modal-entregar').classList.add('open');
 }
 function closeModal(){document.getElementById('modal-entregar').classList.remove('open');}
-function onToggleCobrado(){document.getElementById('cobro-fields').style.display=document.getElementById('toggle-cobrado').checked?'block':'none';}
+function onToggleParcial(){
+  // Pago parcial: el importe ya está pre-cargado, el usuario lo modifica
+  var parcial=document.getElementById('toggle-parcial').checked;
+  var impEl=document.getElementById('modal-importe');
+  if(parcial) impEl.style.border='2px solid var(--blue)';
+  else impEl.style.border='';
+}
+function onToggleCobrado(){
+  var cobrado=document.getElementById('toggle-cobrado').checked;
+  document.getElementById('cobro-fields').style.display=cobrado?'block':'none';
+  // Mostrar opción pago a cuenta solo para facturas
+  var parcialRow=document.getElementById('parcial-row');
+  if(parcialRow) parcialRow.style.display=(cobrado&&state.pickingTipo==='factura')?'block':'none';
+  if(!cobrado&&document.getElementById('toggle-parcial'))document.getElementById('toggle-parcial').checked=false;
+}
 function selectPago(tipo,el){state.formaPago=tipo;document.querySelectorAll('.pago-opt').forEach(function(o){o.classList.remove('active');});el.classList.add('active');}
 async function getGPS(){
   return new Promise(function(resolve){
