@@ -581,6 +581,7 @@ async function loadAssignView(){
     var data=await apiFetch('/oficina/asignacion');
     document.getElementById('office-date').textContent=formatDate(data.fecha);
     state.allPickings=data.pickings||[];
+    state.carrierMap=data.carrier_driver_map||{};
     buildAssignView();
   } catch(e){
     poolRow.innerHTML='<div style="padding:.5rem;color:var(--red);font-size:.85rem">'+e.message+'</div>';
