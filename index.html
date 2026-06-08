@@ -299,6 +299,11 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .btn-confirm:active{background:var(--green-d);transform:scale(.98);}
 .btn-confirm:disabled{background:var(--muted2);box-shadow:none;}
 
+.motivo-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;
+  padding:.6rem .5rem;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;
+  min-height:44px;transition:border-color .15s,color .15s,background .15s;text-align:center;}
+.motivo-btn.active{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+.motivo-btn:active{background:var(--red-bg);}
 /* TOAST */
 .toast{position:fixed;bottom:calc(1.5rem + var(--safe-b));left:50%;
   transform:translateX(-50%) translateY(80px);color:#fff;border-radius:100px;
@@ -413,6 +418,29 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
   <!-- RESUMEN / TODOS -->
   <div class="scroll-area" id="office-content" style="display:none">
     <div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando&#x2026;</div></div>
+  </div>
+</div>
+
+<!-- MODAL NO ENTREGADO -->
+<div class="modal-overlay" id="modal-no-entregado">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--red)">No entregado</div>
+    <div class="modal-client" id="no-ent-client-name">&#x2014;</div>
+    <div class="modal-group">
+      <div class="modal-label">Motivo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.75rem;">
+        <button class="motivo-btn active" onclick="selectMotivo(this,'Cliente ausente')">&#x1F6AA; Cliente ausente</button>
+        <button class="motivo-btn" onclick="selectMotivo(this,'Direcci&#xF3;n incorrecta')">&#x1F4CD; Direcci&#xF3;n incorrecta</button>
+        <button class="motivo-btn" onclick="selectMotivo(this,'Establecimiento cerrado')">&#x1F512; Cerrado</button>
+        <button class="motivo-btn" onclick="selectMotivo(this,'Rechazado por cliente')">&#x274C; Rechazado</button>
+      </div>
+      <textarea class="nota-input" id="no-ent-nota" placeholder="A&#xF1;ade m&#xE1;s detalle&#x2026;" style="height:64px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNoEntModal()">Cancelar</button>
+      <button class="btn-confirm" style="background:var(--red);box-shadow:0 2px 10px rgba(220,38,38,.3);" onclick="confirmarNoEntregado()">&#x26A0; No entregado</button>
+    </div>
   </div>
 </div>
 
@@ -790,13 +818,14 @@ function renderCard(e,ctx){
   var isDone=e.entregado;
   var lineas=(e.lineas||[]).map(function(l){return '<div class="card-line"><span>'+esc(l.producto)+'</span><span class="line-qty">'+l.cantidad+' ud.</span></div>';}).join('');
   var notaHtml=e.nota?'<div class="card-note">\uD83D\uDCCC '+esc(e.nota)+'</div>':'';
-  var notaRepHtml=e.nota_repartidor?'<div class="card-note" style="background:var(--blue-bg);border-left-color:var(--blue)">\uD83D\uDCAC '+esc(e.nota_repartidor)+'</div>':'';
+  var noEntHtml=(!e.entregado&&e.nota_repartidor)?'<span class="badge" style="background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.2)">&#x26A0; Intento fallido</span>':'';
+  var notaRepHtml=e.nota_repartidor?'<div class="card-note" style="background:var(--red-bg);border-left-color:var(--red)">&#x26A0; '+esc(e.nota_repartidor)+'</div>':'';
   var horaHtml=isDone&&e.hora_entrega?'<span style="font-family:var(--rm);font-size:.7rem;color:var(--green);font-weight:500;background:var(--green-bg);padding:.15rem .4rem;border-radius:4px;border:1px solid rgba(22,163,74,.2)">&#x1F550; '+formatHora(e.hora_entrega)+'</span>':'';
   var repBadge=ctx==='office'&&e.repartidor?'<span class="badge" style="background:var(--blue-bg);color:var(--blue);border:1px solid rgba(37,99,235,.15)">'+esc(e.repartidor)+'</span>':'';
   var tipoBadge=e.tipo==='factura'?'<span class="badge badge-fac">FAC</span>':'<span class="badge badge-alb">ALB</span>';
   var importeBadge=e.importe>0?'<span style="font-family:var(--rm);font-size:.72rem;font-weight:600;color:var(--teal)">\u20AC'+parseFloat(e.importe).toFixed(2)+'</span>':'';
   var actionHtml=isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+( e.importe||0)+',\''+( e.tipo||'albaran')+'\'  )">Marcar entregado</button>';
-  var badges=[tipoBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',horaHtml,importeBadge,repBadge].join('');
+  var badges=[tipoBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',noEntHtml,horaHtml,importeBadge,repBadge].join('');
   return '<div class="delivery-card '+(isDone?'entregado':'')+'" id="card-'+e.id+'"><div class="card-header" onclick="toggleCard('+e.id+')"><div class="card-status '+(isDone?'done':'pending')+'">'+(isDone?'\u2713':'\u2192')+'</div><div class="card-info"><div class="card-client">'+esc(e.cliente)+'</div><div class="card-meta"><span class="card-ref">'+e.nombre+'</span>'+badges+'</div></div><div class="card-arrow">&#xBB;</div></div><div class="card-body">'+notaHtml+notaRepHtml+(lineas?'<div class="card-lines">'+lineas+'</div>':'')+(actionHtml?'<div class="card-actions">'+actionHtml+'</div>':'')+'</div></div>';
 }
 function toggleCard(id){var el=document.getElementById('card-'+id);if(el)el.classList.toggle('open');}
@@ -980,6 +1009,7 @@ var _toastTimer;
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';clearTimeout(_toastTimer);_toastTimer=setTimeout(function(){t.className='toast';},2800);}
 
 document.getElementById('modal-entregar').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('modal-no-entregado').addEventListener('click',function(e){if(e.target===this)closeNoEntModal();});
 document.getElementById('login-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 
 // RESTORE THEME
