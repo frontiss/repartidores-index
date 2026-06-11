@@ -648,7 +648,9 @@ function chipHTML(p){
   var more=(p.lineas||[]).length>2?' +'+(p.lineas.length-2):'';
   var imp=p.tipo==='factura'&&p.importe_total?'<span class="chip-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
   var sug=p._sugerido?'border-style:dashed;opacity:.85;':'';
-  return '<div class="assign-chip tipo-'+p.tipo+'" id="chip-'+p.tipo+'-'+p.id+'" data-id="'+p.id+'" data-tipo="'+p.tipo+'" draggable="true" style="'+sug+'"><div class="chip-top"><span class="chip-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span><span class="chip-ref">'+esc(p.nombre)+'</span></div><div class="chip-client">'+esc(p.cliente)+'</div><div class="chip-bottom"><span class="chip-lines">'+(lines?esc(lines)+more:'')+'</span>'+imp+'</div></div>';
+  var chipFecha=((p.fecha||p.scheduled_date||p.invoice_date||'')+'').substring(0,10);
+  var chipFechaHtml=chipFecha?'<span style="font-family:var(--rm);font-size:.62rem;color:var(--muted);margin-left:auto">&#x1F4C5; '+chipFecha+'</span>':'';
+  return '<div class="assign-chip tipo-'+p.tipo+'" id="chip-'+p.tipo+'-'+p.id+'" data-id="'+p.id+'" data-tipo="'+p.tipo+'" draggable="true" style="'+sug+'"><div class="chip-top"><span class="chip-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span><span class="chip-ref">'+esc(p.nombre)+'</span>'+chipFechaHtml+'</div><div class="chip-client">'+esc(p.cliente)+'</div><div class="chip-bottom"><span class="chip-lines">'+(lines?esc(lines)+more:'')+'</span>'+imp+'</div></div>';
 }
 function shortName(n){return n.replace(/preventa/i,'PREV').replace(/repartidor/i,'REP');}
 function matchCarrierToDriver(carrier,drivers){
