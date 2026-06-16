@@ -187,39 +187,42 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
   font-weight:600;letter-spacing:.05em;text-transform:uppercase;}
 .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
 .legend-dot.albaran{background:var(--orange);}.legend-dot.factura{background:var(--teal);}
-.assign-pool-wrap{flex-shrink:0;background:var(--bg);border-bottom:2px solid var(--border);}
-.assign-pool-title{font-family:var(--rh);font-size:.75rem;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:.5rem 1rem .25rem;}
-.assign-pool-row{display:flex;gap:.5rem;padding:.4rem 1rem .65rem;
-  overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:80px;scroll-snap-type:x mandatory;}
-.assign-pool-row::-webkit-scrollbar{display:none;}
-.assign-cols-scroll{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;}
-.assign-cols-scroll::-webkit-scrollbar{display:none;}
-.assign-col{flex:0 0 80vw;min-width:260px;max-width:340px;display:flex;flex-direction:column;
-  border-right:1px solid var(--border);scroll-snap-align:start;}
-.assign-col:last-child{border-right:none;flex:0 0 calc(80vw + 1rem);}
-.assign-col-header{padding:.7rem .75rem .5rem;background:var(--surface);
-  border-bottom:1px solid var(--border);flex-shrink:0;}
-.assign-col-name{font-family:var(--rh);font-size:1.1rem;font-weight:900;
-  text-transform:uppercase;letter-spacing:.06em;text-align:center;}
-.assign-col-count{font-family:var(--rm);font-size:.72rem;color:var(--muted);text-align:center;margin-top:.15rem;}
-.assign-col:nth-child(1) .assign-col-name{color:var(--orange);}
-.assign-col:nth-child(2) .assign-col-name{color:var(--blue);}
-.assign-col:nth-child(3) .assign-col-name{color:var(--purple);}
+/* ── NUEVA VISTA ASIGNACIÓN KANBAN 3 COLUMNAS ── */
+.assign-kanban{flex:1;display:flex;gap:0;overflow:hidden;min-height:0;}
+.assign-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.assign-col:last-child{border-right:none;}
+.assign-col-header{padding:.6rem .75rem .45rem;background:var(--surface);
+  border-bottom:2px solid var(--border);flex-shrink:0;}
+.assign-col-title{display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem;}
+.assign-col-name{font-family:var(--rh);font-size:1rem;font-weight:900;
+  text-transform:uppercase;letter-spacing:.06em;}
+.assign-col-prev{font-family:var(--rm);font-size:.65rem;font-weight:700;
+  padding:.1rem .35rem;border-radius:4px;letter-spacing:.05em;text-transform:uppercase;}
+.assign-col-count{font-family:var(--rm);font-size:.7rem;color:var(--muted);margin-left:auto;}
+.assign-col-sub{font-family:var(--rm);font-size:.65rem;color:var(--muted);}
+/* colores por columna */
+.assign-col.col-pool .assign-col-name{color:var(--muted);}
+.assign-col.col-pool .assign-col-prev{background:rgba(120,120,120,.12);color:var(--muted);}
+.assign-col.col-pool .assign-col-header{border-bottom-color:var(--border);}
+.assign-col.col-c2 .assign-col-name{color:var(--orange);}
+.assign-col.col-c2 .assign-col-prev{background:var(--orange-bg);color:var(--orange);}
+.assign-col.col-c2 .assign-col-header{border-bottom-color:var(--orange);}
+.assign-col.col-c1 .assign-col-name{color:var(--blue);}
+.assign-col.col-c1 .assign-col-prev{background:rgba(59,130,246,.12);color:var(--blue);}
+.assign-col.col-c1 .assign-col-header{border-bottom-color:var(--blue);}
 .assign-col-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:.6rem .6rem calc(.6rem + var(--safe-b));background:var(--bg);}
-.assign-col-body.drag-over,.assign-pool-row.drag-over{
+  padding:.5rem .5rem calc(.5rem + var(--safe-b));background:var(--bg);}
+.assign-col.col-pool .assign-col-body{background:var(--surface2);}
+.assign-col-body.drag-over{
   background:var(--orange-bg);outline:2px dashed rgba(245,130,10,.5);outline-offset:-4px;border-radius:8px;}
 .assign-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;
-  padding:.6rem .75rem;margin-bottom:.5rem;cursor:grab;user-select:none;
+  padding:.55rem .7rem;margin-bottom:.45rem;cursor:grab;user-select:none;
   -webkit-tap-highlight-color:transparent;touch-action:none;
   transition:box-shadow .15s,opacity .2s;box-shadow:0 1px 3px rgba(0,0,0,.06);position:relative;}
 .assign-chip:active{cursor:grabbing;}
 .assign-chip.dragging{opacity:.3;}
 .assign-chip.drag-preview{position:fixed;z-index:1000;pointer-events:none;opacity:.95;
   box-shadow:0 12px 40px rgba(0,0,0,.2);transform:rotate(-1.5deg) scale(1.04);min-width:160px;}
-.assign-pool-row .assign-chip{flex-shrink:0;margin-bottom:0;min-width:170px;scroll-snap-align:start;}
 .assign-chip.tipo-albaran{border-left:3px solid var(--orange);}
 .assign-chip.tipo-factura{border-left:3px solid var(--teal);}
 .chip-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;}
@@ -389,12 +392,7 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
     <div style="padding:.5rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
       <button id="btn-auto" onclick="autoAsignar()" style="width:100%;height:44px;background:var(--orange);color:#fff;font-family:var(--rh);font-size:1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:10px;box-shadow:0 2px 8px rgba(245,130,10,.3);">&#x26A1; Auto-asignar por preventa</button>
     </div>
-    <div class="assign-pool-wrap">
-      <div class="assign-pool-title">Sin asignar</div>
-      <div class="assign-pool-row" id="pool-row"
-           ondragover="onDragOver(event)" ondrop="onDrop(event,'pool')" ondragleave="onDragLeave(event)"></div>
-    </div>
-    <div class="assign-cols-scroll" id="assign-columns"></div>
+    <div class="assign-kanban" id="assign-kanban"></div>
   </div>
 
   <!-- MAPA -->
@@ -599,12 +597,24 @@ async function initOffice(){
   loadAssignView();
 }
 
-// ASSIGN VIEW
+// ASSIGN VIEW — Kanban 3 columnas
+var PREV_CLASS={'preventa 1':'col-c1','prev1':'col-c1','preventa 2':'col-c2','prev2':'col-c2'};
+function driverColClass(name){
+  if(!name)return 'col-c1';
+  var n=name.toLowerCase();
+  for(var k in PREV_CLASS){if(n.indexOf(k)>=0)return PREV_CLASS[k];}
+  return 'col-c1';
+}
+function driverPrevLabel(name){
+  if(!name)return '';
+  var n=name.toLowerCase();
+  if(n.indexOf('preventa 1')>=0||n.indexOf('prev1')>=0)return 'Prev1';
+  if(n.indexOf('preventa 2')>=0||n.indexOf('prev2')>=0)return 'Prev2';
+  return '';
+}
 async function loadAssignView(){
-  var poolRow=document.getElementById('pool-row');
-  var cols=document.getElementById('assign-columns');
-  poolRow.innerHTML='<div style="display:flex;align-items:center;gap:.5rem;padding:.25rem 0"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:.8rem;color:var(--muted)">Cargando\u2026</span></div>';
-  cols.innerHTML='';
+  var kanban=document.getElementById('assign-kanban');
+  kanban.innerHTML='<div style="display:flex;align-items:center;gap:.5rem;padding:1rem"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:.8rem;color:var(--muted)">Cargando\u2026</span></div>';
   try {
     var data=await apiFetch('/oficina/asignacion');
     document.getElementById('office-date').textContent=formatDate(data.fecha);
@@ -612,12 +622,12 @@ async function loadAssignView(){
     state.carrierMap=data.carrier_driver_map||{};
     buildAssignView();
   } catch(e){
-    poolRow.innerHTML='<div style="padding:.5rem;color:var(--red);font-size:.85rem">'+e.message+'</div>';
+    kanban.innerHTML='<div style="padding:.5rem;color:var(--red);font-size:.85rem">'+e.message+'</div>';
   }
 }
 function buildAssignView(){
   var drivers=state.drivers;var pickings=state.allPickings;
-  var poolRow=document.getElementById('pool-row');var colsEl=document.getElementById('assign-columns');
+  var kanban=document.getElementById('assign-kanban');
   var unassigned=[];var assignedMap={};
   drivers.forEach(function(d){assignedMap[d.id]=[];});
   pickings.forEach(function(p){
@@ -630,17 +640,42 @@ function buildAssignView(){
     }
   });
   var poolSorted=unassigned.slice().sort(function(a,b){return a.tipo==='factura'?-1:b.tipo==='factura'?1:0;});
-  poolRow.innerHTML=poolSorted.length?poolSorted.map(chipHTML).join(''):'<div style="padding:.5rem .2rem;font-size:.85rem;color:var(--green);font-weight:600">Todo asignado \u2713</div>';
-  if(!drivers.length){colsEl.innerHTML='<div style="padding:2rem 1rem;color:var(--muted);font-size:.9rem;text-align:center">No se encontraron repartidores.</div>';attachDragEvents();return;}
-  colsEl.innerHTML=drivers.map(function(d){
+  var poolCount=poolSorted.length;
+  var poolBody=poolSorted.length
+    ?poolSorted.map(chipHTML).join('')
+    :'<div style="padding:.75rem .25rem;font-size:.82rem;color:var(--green);font-weight:600">\u2713 Todo asignado</div>';
+  var colPool='<div class="assign-col col-pool" id="col-pool">'
+    +'<div class="assign-col-header">'
+    +'<div class="assign-col-title"><span class="assign-col-name">Sin asignar</span>'
+    +'<span class="assign-col-prev" id="pool-count">'+poolCount+'</span></div>'
+    +'<div class="assign-col-sub">Arrastra a un repartidor</div>'
+    +'</div>'
+    +'<div class="assign-col-body" id="pool-row" data-driver-id="pool" '
+    +'ondragover="onDragOver(event)" ondrop="onDrop(event,\'pool\')" ondragleave="onDragLeave(event)">'
+    +poolBody+'</div></div>';
+  var colsHTML=drivers.map(function(d){
     var items=assignedMap[d.id]||[];
     var sorted=items.slice().sort(function(a,b){return a.tipo==='factura'?-1:b.tipo==='factura'?1:0;});
     var chips=sorted.map(chipHTML).join('');
     var fc=items.filter(function(i){return i.tipo==='factura';}).length;
     var ac=items.filter(function(i){return i.tipo==='albaran';}).length;
-    var countLabel=[ac?ac+' alb.':'',fc?fc+' fact.':''].filter(Boolean).join(' \u00B7 ')||'0 docs';
-    return '<div class="assign-col" id="col-'+d.id+'"><div class="assign-col-header"><div class="assign-col-name">'+shortName(d.name)+'</div><div class="assign-col-count" id="count-'+d.id+'">'+countLabel+'</div></div><div class="assign-col-body" data-driver-id="'+d.id+'" ondragover="onDragOver(event)" ondrop="onDrop(event,'+d.id+')" ondragleave="onDragLeave(event)">'+(chips||'<div style="height:48px;border:2px dashed var(--muted2);border-radius:10px;margin:.3rem;"></div>')+'</div></div>';
+    var sub=[ac?ac+' alb.':'',fc?fc+' fact.':''].filter(Boolean).join(' \u00B7 ')||'0 docs';
+    var colClass=driverColClass(d.name);
+    var prevLabel=driverPrevLabel(d.name);
+    var dName=d.name.replace(/preventa\s*\d*/gi,'').replace(/repartidor\s*\d*/gi,'').trim().toUpperCase()||d.name.toUpperCase();
+    return '<div class="assign-col '+colClass+'" id="col-'+d.id+'">'
+      +'<div class="assign-col-header">'
+      +'<div class="assign-col-title"><span class="assign-col-name">'+dName+'</span>'
+      +(prevLabel?'<span class="assign-col-prev">'+prevLabel+'</span>':'')
+      +'<span class="assign-col-count" id="count-'+d.id+'">'+items.length+' docs</span></div>'
+      +'<div class="assign-col-sub">'+sub+'</div>'
+      +'</div>'
+      +'<div class="assign-col-body" data-driver-id="'+d.id+'" '
+      +'ondragover="onDragOver(event)" ondrop="onDrop(event,'+d.id+')" ondragleave="onDragLeave(event)">'
+      +(chips||'<div style="height:56px;border:2px dashed var(--muted2);border-radius:10px;margin:.3rem;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted)">Suelta aqu\xED</div>')
+      +'</div></div>';
   }).join('');
+  kanban.innerHTML=colPool+colsHTML;
   attachDragEvents();
 }
 function chipHTML(p){
@@ -707,7 +742,7 @@ function onTouchMove(e){
   if(state.preview){state.preview.style.left=(touch.clientX-_tx)+'px';state.preview.style.top=(touch.clientY-_ty)+'px';}
   document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
   var el=document.elementFromPoint(touch.clientX,touch.clientY);
-  var zone=el&&el.closest('.assign-col-body,.assign-pool-row');
+  var zone=el&&el.closest('.assign-col-body');
   if(zone)zone.classList.add('drag-over');
 }
 async function onTouchEnd(e){
@@ -716,9 +751,9 @@ async function onTouchEnd(e){
   if(_tc){_tc.classList.remove('dragging');_tc=null;}
   document.querySelectorAll('.drag-over').forEach(function(el){el.classList.remove('drag-over');});
   var el=document.elementFromPoint(touch.clientX,touch.clientY);
-  var zone=el&&el.closest('.assign-col-body,.assign-pool-row');
+  var zone=el&&el.closest('.assign-col-body');
   if(!zone||!state.dragItem)return;
-  var dId=zone.classList.contains('assign-pool-row')?null:parseInt(zone.dataset.driverId);
+  var dId=zone.dataset.driverId==='pool'?null:parseInt(zone.dataset.driverId);
   await assignItem(state.dragItem.id,state.dragItem.tipo,isNaN(dId)?null:dId);
   state.dragItem=null;
 }
