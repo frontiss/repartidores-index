@@ -195,37 +195,43 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .btn-asignar:disabled{opacity:.35;cursor:default;}
 .btn-asignar.prev1{background:var(--blue);color:#fff;}
 .btn-asignar.prev2{background:var(--orange);color:#fff;}
-.assign-row{display:flex;align-items:center;gap:.65rem;padding:.55rem .6rem;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;margin-bottom:.4rem;cursor:pointer;transition:background .12s,border-color .12s;user-select:none;}
-.assign-row:hover{background:var(--surface2);}
-.assign-row.selected{background:var(--orange-bg);border-color:var(--orange);}
-.assign-row.assigned-p1{border-left:4px solid var(--blue);}
-.assign-row.assigned-p2{border-left:4px solid var(--orange);}
-.assign-row.assigned-other{border-left:4px solid var(--muted2);}
-.assign-row-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s;}
-.assign-row.selected .assign-row-check{background:var(--orange);border-color:var(--orange);}
-.assign-row-tipo{font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:.15rem .35rem;border-radius:4px;flex-shrink:0;}
-.assign-row-tipo.albaran{background:var(--orange-bg);color:var(--orange);}
-.assign-row-tipo.factura{background:var(--teal-bg);color:var(--teal);}
-.assign-row-body{flex:1;min-width:0;}
-.assign-row-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.1rem;}
-.assign-row-ref{font-family:var(--rm);font-size:.68rem;color:var(--muted);}
-.assign-row-client{font-size:.88rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.assign-row-lines{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.assign-row-right{display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;flex-shrink:0;}
-.assign-row-importe{font-family:var(--rm);font-size:.8rem;font-weight:600;color:var(--teal);}
-.assign-row-asignado{font-family:var(--rm);font-size:.62rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;}
-.assign-row-asignado.p1{background:rgba(59,130,246,.12);color:var(--blue);}
-.assign-row-asignado.p2{background:var(--orange-bg);color:var(--orange);}
-.assign-row-fecha{font-family:var(--rm);font-size:.62rem;color:var(--muted);}
-.assign-day-group{margin-bottom:.75rem;}
-.assign-day-header{display:flex;align-items:center;gap:.5rem;padding:.35rem .1rem;margin-bottom:.3rem;cursor:pointer;user-select:none;}
-.assign-day-label{font-family:var(--rh);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
-.assign-day-count{font-family:var(--rm);font-size:.68rem;color:var(--muted2);background:var(--surface2);padding:.1rem .4rem;border-radius:10px;}
-.assign-day-selall{font-family:var(--rm);font-size:.65rem;color:var(--orange);margin-left:auto;cursor:pointer;font-weight:600;}
-.assign-search-wrap{padding:.5rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+/* ── TARJETAS PEQUEÑAS ── */
+.assign-card{display:flex;align-items:center;gap:.5rem;padding:.4rem .55rem;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:background .1s,border-color .1s;user-select:none;min-width:0;}
+.assign-card:hover{background:var(--surface2);}
+.assign-card.selected{background:var(--orange-bg);border-color:var(--orange);}
+.assign-card.assigned-p1{border-left:3px solid var(--blue);}
+.assign-card.assigned-p2{border-left:3px solid var(--orange);}
+.assign-card.assigned-other{border-left:3px solid var(--muted2);}
+.assign-card-check{width:16px;height:16px;border-radius:3px;border:2px solid var(--border);background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .1s,border-color .1s;}
+.assign-card.selected .assign-card-check{background:var(--orange);border-color:var(--orange);}
+.assign-card-tipo{font-size:.55rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.1rem .28rem;border-radius:3px;flex-shrink:0;}
+.assign-card-tipo.albaran{background:var(--orange-bg);color:var(--orange);}
+.assign-card-tipo.factura{background:var(--teal-bg);color:var(--teal);}
+.assign-card-body{flex:1;min-width:0;}
+.assign-card-ref{font-family:var(--rm);font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.assign-card-client{font-size:.78rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.assign-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:.15rem;flex-shrink:0;}
+.assign-card-importe{font-family:var(--rm);font-size:.72rem;font-weight:600;color:var(--teal);}
+.assign-card-asignado{font-family:var(--rm);font-size:.58rem;font-weight:700;padding:.08rem .28rem;border-radius:3px;}
+.assign-card-asignado.p1{background:rgba(59,130,246,.12);color:var(--blue);}
+.assign-card-asignado.p2{background:var(--orange-bg);color:var(--orange);}
+.assign-card-cl{font-family:var(--rm);font-size:.58rem;font-weight:700;padding:.08rem .25rem;border-radius:3px;background:var(--orange-bg);color:var(--orange);}
+/* ── ACORDEÓN DÍAS ── */
+.assign-day-group{margin-bottom:.5rem;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.assign-day-header{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s;}
+.assign-day-header:hover{background:var(--surface2);}
+.assign-day-arrow{font-size:.7rem;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.assign-day-group.open .assign-day-arrow{transform:rotate(90deg);}
+.assign-day-label{font-family:var(--rh);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text);}
+.assign-day-count{font-family:var(--rm);font-size:.65rem;color:var(--muted2);background:var(--surface2);padding:.1rem .4rem;border-radius:10px;}
+.assign-day-selall{font-family:var(--rm);font-size:.63rem;color:var(--orange);margin-left:auto;font-weight:600;padding:.1rem .3rem;}
+.assign-day-body{display:none;padding:.4rem .5rem .5rem;background:var(--bg);display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.35rem;}
+.assign-day-group.open .assign-day-body{display:grid;}
+.assign-day-group:not(.open) .assign-day-body{display:none;}
+/* ── BUSCADOR ── */
+.assign-search-wrap{position:relative;padding:.5rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
 .assign-search{width:100%;height:36px;border:1.5px solid var(--border);border-radius:8px;padding:0 .75rem 0 2rem;font-family:var(--rm);font-size:.85rem;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;}
 .assign-search:focus{border-color:var(--orange);}
-.assign-search-wrap{position:relative;}
 .assign-search-icon{position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.9rem;}
 .chip-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;}
 .chip-tipo{font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
@@ -649,26 +655,24 @@ async function loadAssignView(){
 }
 
 function buildAssignView(filtro){
-  var pickings = state.allPickings;
-  var lst = document.getElementById('assign-list');
-  var q = (filtro||'').toLowerCase().trim();
-  // Filtrar por búsqueda
+  var pickings=state.allPickings;
+  var lst=document.getElementById('assign-list');
+  var q=(filtro||'').toLowerCase().trim();
   if(q){
-    pickings = pickings.filter(function(p){
+    pickings=pickings.filter(function(p){
       return (p.cliente||'').toLowerCase().indexOf(q)>=0
-          || (p.nombre||'').toLowerCase().indexOf(q)>=0
-          || (p.carrier||'').toLowerCase().indexOf(q)>=0;
+          ||(p.nombre||'').toLowerCase().indexOf(q)>=0
+          ||(p.carrier||'').toLowerCase().indexOf(q)>=0;
     });
   }
-  // Ordenar: sin asignar primero, luego por fecha, luego por carrier, luego por cliente
-  var sorted = pickings.slice().sort(function(a,b){
-    var an=a.repartidor_id?1:0, bn=b.repartidor_id?1:0;
-    if(an!==bn) return an-bn;
-    var af=(a.fecha||'').substring(0,10), bf=(b.fecha||'').substring(0,10);
-    if(af!==bf) return af<bf?-1:1;
-    var ap=carrierPrevNum(a.carrier), bp=carrierPrevNum(b.carrier);
-    if(ap!==bp) return ap-bp;
-    return (a.cliente||'').localeCompare(b.cliente||'');
+  var sorted=pickings.slice().sort(function(a,b){
+    var an=a.repartidor_id?1:0,bn=b.repartidor_id?1:0;
+    if(an!==bn)return an-bn;
+    var af=(a.fecha||'').substring(0,10),bf=(b.fecha||'').substring(0,10);
+    if(af!==bf)return af<bf?-1:1;
+    var ap=carrierPrevNum(a.carrier),bp=carrierPrevNum(b.carrier);
+    if(ap!==bp)return ap-bp;
+    return(a.cliente||'').localeCompare(b.cliente||'');
   });
   if(!sorted.length){
     lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x2705;</div><div class="empty-title">'+(q?'Sin resultados':'Todo asignado')+'</div></div>';
@@ -677,99 +681,104 @@ function buildAssignView(filtro){
   // Agrupar por fecha
   var grupos={};
   sorted.forEach(function(p){
-    var fecha=(p.fecha||'').substring(0,10)||'Sin fecha';
-    if(!grupos[fecha]) grupos[fecha]=[];
-    grupos[fecha].push(p);
+    var f=(p.fecha||'').substring(0,10)||'Sin fecha';
+    if(!grupos[f])grupos[f]=[];
+    grupos[f].push(p);
   });
   var fechas=Object.keys(grupos).sort();
-  // Hoy y ayer para etiquetas
   var hoyStr=new Date().toISOString().substring(0,10);
   var ayerStr=new Date(Date.now()-86400000).toISOString().substring(0,10);
   function fechaLabel(f){
-    if(f===hoyStr) return 'Hoy \u2014 '+f;
-    if(f===ayerStr) return 'Ayer \u2014 '+f;
+    if(f===hoyStr)return 'Hoy \u2014 '+f;
+    if(f===ayerStr)return 'Ayer \u2014 '+f;
     return f;
   }
-  lst.innerHTML=fechas.map(function(fecha){
+  var checkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  lst.innerHTML=fechas.map(function(fecha,gi){
     var items=grupos[fecha];
-    var rows=items.map(function(p){
+    var isOpen=gi===0; // primer grupo abierto por defecto
+    var cards=items.map(function(p){
       var key=p.tipo+p.id;
       var sel=!!_seleccionados[key];
-      var lns=(p.lineas||[]).slice(0,2).map(function(l){return l.cantidad+'x '+l.producto;}).join(', ');
-      var more=(p.lineas||[]).length>2?' +'+(p.lineas.length-2):'';
       var cl=carrierLabel(p.carrier);
-      var clHtml=cl?'<span style="font-family:var(--rm);font-size:.6rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;background:var(--orange-bg);color:var(--orange)">'+cl+'</span>':'';
-      var imp=(p.importe_total||0)>0?'<span class="assign-row-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
+      var clHtml=cl?'<span class="assign-card-cl">'+cl+'</span>':'';
+      var imp=(p.importe_total||0)>0?'<span class="assign-card-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
       var repLabel='';
-      var rowClass='assign-row'+(sel?' selected':'');
+      var cardClass='assign-card'+(sel?' selected':'');
       if(p.repartidor_id){
         var d=(state.drivers||[]).find(function(x){return x.id===p.repartidor_id;});
         var pn=d?driverPrevNum(d):0;
         var rn=p.repartidor?p.repartidor.replace(/preventa\s*\d*/gi,'').replace(/repartidor\s*\d*/gi,'').trim():p.repartidor||'';
-        repLabel='<span class="assign-row-asignado '+(pn===1?'p1':pn===2?'p2':'')+'">'+(pn?'P'+pn+' ':'')+esc(rn)+'</span>';
-        rowClass+=pn===1?' assigned-p1':pn===2?' assigned-p2':' assigned-other';
+        repLabel='<span class="assign-card-asignado '+(pn===1?'p1':pn===2?'p2':'')+'">'+(pn?'P'+pn+' ':'')+esc(rn)+'</span>';
+        cardClass+=pn===1?' assigned-p1':pn===2?' assigned-p2':' assigned-other';
       }
-      return '<div class="'+rowClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')">'
-        +'<div class="assign-row-check">'+(sel?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>'
-        +'<span class="assign-row-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
-        +'<div class="assign-row-body">'
-          +'<div class="assign-row-top"><span class="assign-row-ref">'+esc(p.nombre)+'</span>'+clHtml+'</div>'
-          +'<div class="assign-row-client">'+esc(p.cliente)+'</div>'
-          +(lns?'<div class="assign-row-lines">'+esc(lns)+more+'</div>':'')
+      return '<div class="'+cardClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')" title="'+esc(p.cliente)+'">'
+        +'<div class="assign-card-check">'+(sel?checkSvg:'')+'</div>'
+        +'<span class="assign-card-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
+        +'<div class="assign-card-body">'
+          +'<div class="assign-card-ref">'+esc(p.nombre)+clHtml+'</div>'
+          +'<div class="assign-card-client">'+esc(p.cliente)+'</div>'
         +'</div>'
-        +'<div class="assign-row-right">'+imp+repLabel+'</div>'
+        +'<div class="assign-card-right">'+imp+repLabel+'</div>'
         +'</div>';
     }).join('');
-    return '<div class="assign-day-group">'
-      +'<div class="assign-day-header" onclick="seleccionarDia(\''+fecha+'\')">'
+    return '<div class="assign-day-group'+(isOpen?' open':'')+'" id="dag-'+fecha+'">'
+      +'<div class="assign-day-header" onclick="toggleDayGroup(\''+fecha+'\')">'
+      +'<span class="assign-day-arrow">&#x25B6;</span>'
       +'<span class="assign-day-label">'+fechaLabel(fecha)+'</span>'
       +'<span class="assign-day-count">'+items.length+'</span>'
-      +'<span class="assign-day-selall">Seleccionar todos</span>'
+      +'<span class="assign-day-selall" onclick="event.stopPropagation();seleccionarDia(\''+fecha+'\')">Sel. todos</span>'
       +'</div>'
-      +rows
+      +'<div class="assign-day-body">'+cards+'</div>'
       +'</div>';
   }).join('');
   updateSelCount();
 }
 
+function toggleDayGroup(fecha){
+  var el=document.getElementById('dag-'+fecha);
+  if(el)el.classList.toggle('open');
+}
+
 function seleccionarDia(fecha){
-  var items=state.allPickings.filter(function(p){return (p.fecha||'').substring(0,10)===fecha;});
-  var allSel=items.every(function(p){return !!_seleccionados[p.tipo+p.id];});
+  var items=state.allPickings.filter(function(p){return(p.fecha||'').substring(0,10)===fecha;});
+  var allSel=items.every(function(p){return!!_seleccionados[p.tipo+p.id];});
   items.forEach(function(p){
     var key=p.tipo+p.id;
-    if(allSel) delete _seleccionados[key];
+    if(allSel)delete _seleccionados[key];
     else _seleccionados[key]={id:p.id,tipo:p.tipo};
   });
   buildAssignView(document.getElementById('assign-search')?document.getElementById('assign-search').value:'');
 }
 
-function filterAssignList(q){
-  buildAssignView(q);
-}
+function filterAssignList(q){buildAssignView(q);}
 
-function toggleSelRow(el, tipo, id){
-  var key = tipo+id;
+function toggleSelRow(el,tipo,id){
+  var key=tipo+id;
+  var check=el.querySelector('.assign-card-check');
   if(_seleccionados[key]){
     delete _seleccionados[key];
     el.classList.remove('selected');
-    el.querySelector('.assign-row-check').innerHTML='';
-  } else {
+    if(check)check.innerHTML='';
+  }else{
+    var checkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     _seleccionados[key]={id:id,tipo:tipo};
     el.classList.add('selected');
-    el.querySelector('.assign-row-check').innerHTML='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if(check)check.innerHTML=checkSvg;
   }
   updateSelCount();
 }
 
 function updateSelCount(){
-  var n = Object.keys(_seleccionados).length;
-  var el = document.getElementById('assign-sel-count');
-  if(el) el.textContent = n===0?'Selecciona documentos para asignar':n+' seleccionado'+(n===1?'':'s');
-  var bp1 = document.getElementById('btn-asignar-p1');
-  var bp2 = document.getElementById('btn-asignar-p2');
-  if(bp1) bp1.disabled = n===0;
-  if(bp2) bp2.disabled = n===0;
+  var n=Object.keys(_seleccionados).length;
+  var el=document.getElementById('assign-sel-count');
+  if(el)el.textContent=n===0?'Selecciona documentos para asignar':n+' seleccionado'+(n===1?'':'s');
+  var bp1=document.getElementById('btn-asignar-p1');
+  var bp2=document.getElementById('btn-asignar-p2');
+  if(bp1)bp1.disabled=n===0;
+  if(bp2)bp2.disabled=n===0;
 }
+
 
 async function asignarSeleccionados(prev){
   var items = Object.values(_seleccionados);
