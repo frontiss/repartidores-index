@@ -678,6 +678,15 @@ function buildAssignView(){
   kanban.innerHTML=colPool+colsHTML;
   attachDragEvents();
 }
+function chipCarrierLabel(carrier){
+  if(!carrier)return '';
+  var c=carrier.toLowerCase();
+  if(c.indexOf('preventa 1')>=0||c.indexOf('prev1')>=0)return 'P1';
+  if(c.indexOf('preventa 2')>=0||c.indexOf('prev2')>=0)return 'P2';
+  if(c.indexOf('preventa 3')>=0||c.indexOf('prev3')>=0)return 'P3';
+  var m=c.match(/preventa\s*(\d+)/);if(m)return 'P'+m[1];
+  return '';
+}
 function chipHTML(p){
   var lines=(p.lineas||[]).slice(0,2).map(function(l){return l.cantidad+'x '+l.producto;}).join(', ');
   var more=(p.lineas||[]).length>2?' +'+(p.lineas.length-2):'';
@@ -685,7 +694,9 @@ function chipHTML(p){
   var sug=p._sugerido?'border-style:dashed;opacity:.85;':'';
   var chipFecha=((p.fecha||p.scheduled_date||p.invoice_date||'')+'').substring(0,10);
   var chipFechaHtml=chipFecha?'<span style="font-family:var(--rm);font-size:.62rem;color:var(--muted);margin-left:auto">&#x1F4C5; '+chipFecha+'</span>':'';
-  return '<div class="assign-chip tipo-'+p.tipo+'" id="chip-'+p.tipo+'-'+p.id+'" data-id="'+p.id+'" data-tipo="'+p.tipo+'" draggable="true" style="'+sug+'"><div class="chip-top"><span class="chip-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span><span class="chip-ref">'+esc(p.nombre)+'</span>'+chipFechaHtml+'</div><div class="chip-client">'+esc(p.cliente)+'</div><div class="chip-bottom"><span class="chip-lines">'+(lines?esc(lines)+more:'')+'</span>'+imp+'</div></div>';
+  var cl=chipCarrierLabel(p.carrier);
+  var clHtml=cl?'<span style="font-family:var(--rm);font-size:.6rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;background:var(--orange-bg);color:var(--orange);margin-left:.25rem">'+cl+'</span>':'';
+  return '<div class="assign-chip tipo-'+p.tipo+'" id="chip-'+p.tipo+'-'+p.id+'" data-id="'+p.id+'" data-tipo="'+p.tipo+'" draggable="true" style="'+sug+'"><div class="chip-top"><span class="chip-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span><span class="chip-ref">'+esc(p.nombre)+'</span>'+clHtml+chipFechaHtml+'</div><div class="chip-client">'+esc(p.cliente)+'</div><div class="chip-bottom"><span class="chip-lines">'+(lines?esc(lines)+more:'')+'</span>'+imp+'</div></div>';
 }
 function shortName(n){return n.replace(/preventa/i,'PREV').replace(/repartidor/i,'REP');}
 function matchCarrierToDriver(carrier,drivers){
