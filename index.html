@@ -159,6 +159,13 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .btn-desmarcar:active{background:var(--border);}
 
 /* RESUMEN */
+.resumen-toolbar{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+.resumen-sel-count{font-family:var(--rm);font-size:.78rem;color:var(--muted);margin-right:auto;}
+.btn-desasignar-sel{font-family:var(--rh);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:.4rem .85rem;border-radius:8px;border:1.5px solid rgba(220,38,38,.3);background:var(--red-bg);color:var(--red);cursor:pointer;}
+.btn-desasignar-sel:disabled{opacity:.35;cursor:default;}
+.card-checkbox{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .1s,border-color .1s;margin-right:.1rem;}
+.card-checkbox.checked{background:var(--orange);border-color:var(--orange);}
+.delivery-card.sel-active .card-checkbox{display:flex;}
 .rep-group{margin-bottom:1.5rem;}
 .rep-header{display:flex;align-items:center;justify-content:space-between;
   padding:.7rem .9rem;background:var(--surface);border:1.5px solid var(--border);
@@ -445,6 +452,12 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
     </div>
   </div>
 
+  <!-- RESUMEN TOOLBAR (selección para desasignar) -->
+  <div class="resumen-toolbar" id="resumen-toolbar" style="display:none;">
+    <span class="resumen-sel-count" id="resumen-sel-count">0 seleccionados</span>
+    <button class="btn-desasignar-sel" id="btn-desasignar-sel" onclick="desasignarSelResumen()" disabled>&#x2715; Desasignar seleccionados</button>
+    <button onclick="cancelarSelResumen()" style="font-family:var(--rm);font-size:.78rem;padding:.4rem .7rem;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">Cancelar</button>
+  </div>
   <!-- RESUMEN / TODOS -->
   <div class="scroll-area" id="office-content" style="display:none">
     <div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando&#x2026;</div></div>
@@ -928,9 +941,11 @@ async function autoAsignar(){
 }
 
 // RESUMEN
+var _resumenSel={};
 async function loadResumen(){
   var c=document.getElementById('office-content');
   c.innerHTML='<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando\u2026</div></div>';
+  _resumenSel={};updateResumenToolbar();
   try{
     var data=await apiFetch('/oficina/resumen');
     document.getElementById('office-date').textContent=formatDate(data.fecha);
@@ -945,6 +960,53 @@ async function loadResumen(){
   }catch(e){
     c.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
   }
+}
+function toggleResumenSel(id,tipo,ev){
+  if(ev)ev.stopPropagation();
+  var key=tipo+id;
+  var card=document.getElementById('card-'+id);
+  var cb=card?card.querySelector('.card-checkbox'):null;
+  var chk='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  if(_resumenSel[key]){
+    delete _resumenSel[key];
+    if(cb){cb.classList.remove('checked');cb.innerHTML='';}
+    if(card)card.style.outline='';
+  }else{
+    _resumenSel[key]={id:id,tipo:tipo};
+    if(cb){cb.classList.add('checked');cb.innerHTML=chk;}
+    if(card)card.style.outline='2px solid var(--orange)';
+  }
+  updateResumenToolbar();
+}
+function updateResumenToolbar(){
+  var n=Object.keys(_resumenSel).length;
+  var tb=document.getElementById('resumen-toolbar');
+  var sc=document.getElementById('resumen-sel-count');
+  var btn=document.getElementById('btn-desasignar-sel');
+  if(tb)tb.style.display=n>0?'flex':'none';
+  if(sc)sc.textContent=n+' seleccionado'+(n===1?'':'s');
+  if(btn)btn.disabled=n===0;
+}
+function cancelarSelResumen(){
+  Object.keys(_resumenSel).forEach(function(key){
+    var item=_resumenSel[key];
+    var card=document.getElementById('card-'+item.id);
+    if(card){card.style.outline='';var cb=card.querySelector('.card-checkbox');if(cb){cb.classList.remove('checked');cb.innerHTML='';}}
+  });
+  _resumenSel={};updateResumenToolbar();
+}
+async function desasignarSelResumen(){
+  var items=Object.values(_resumenSel);
+  if(!items.length)return;
+  var ok=0,err=0;
+  for(var i=0;i<items.length;i++){
+    var item=items[i];
+    var ep=item.tipo==='factura'?'/facturas/'+item.id+'/asignar':'/entregas/'+item.id+'/asignar';
+    try{await apiFetch(ep,{method:'POST',body:JSON.stringify({user_id:null})});ok++;}
+    catch(e){err++;}
+  }
+  showToast(ok+' desasignados'+(err?' ('+err+' errores)':''),'ok');
+  loadResumen();
 }
 
 // TODOS
@@ -1015,7 +1077,8 @@ function renderCard(e,ctx){
   var desasignarBtn=ctx==='office'&&!isDone?'<button class="btn-desmarcar" onclick="desasignarResumen('+e.id+',\''+( e.tipo||'albaran')+'\',event)" style="color:var(--red);border-color:rgba(220,38,38,.3);">✕ Desasignar</button>':'';
   var actionHtml=isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+importeModal+',\''+( e.tipo||'albaran')+'\')">Marcar entregado</button>'+desasignarBtn;
   var badges=[tipoBadge,fechaBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',noEntHtml,horaHtml,importeBadge,repBadge].join('');
-  return '<div class="delivery-card '+(isDone?'entregado':'')+'" id="card-'+e.id+'"><div class="card-header" onclick="toggleCard('+e.id+')"><div class="card-status '+(isDone?'done':'pending')+'">'+(isDone?'\u2713':'\u2192')+'</div><div class="card-info"><div class="card-client">'+esc(e.cliente)+'</div><div class="card-meta"><span class="card-ref">'+e.nombre+'</span>'+badges+'</div></div><div class="card-arrow">&#xBB;</div></div><div class="card-body">'+notaHtml+notaRepHtml+(lineas?'<div class="card-lines">'+lineas+'</div>':'')+(actionHtml?'<div class="card-actions">'+actionHtml+'</div>':'')+'</div></div>';
+  var checkHtml=ctx==='office'&&!isDone?'<div class="card-checkbox" onclick="toggleResumenSel('+e.id+',\''+( e.tipo||'albaran')+'\',event)"></div>':'';
+  return '<div class="delivery-card '+(isDone?'entregado':'')+'" id="card-'+e.id+'"><div class="card-header" onclick="toggleCard('+e.id+')">'+checkHtml+'<div class="card-status '+(isDone?'done':'pending')+'">'+(isDone?'\u2713':'\u2192')+'</div><div class="card-info"><div class="card-client">'+esc(e.cliente)+'</div><div class="card-meta"><span class="card-ref">'+e.nombre+'</span>'+badges+'</div></div><div class="card-arrow">&#xBB;</div></div><div class="card-body">'+notaHtml+notaRepHtml+(lineas?'<div class="card-lines">'+lineas+'</div>':'')+(actionHtml?'<div class="card-actions">'+actionHtml+'</div>':'')+'</div></div>';
 }
 function toggleCard(id){var el=document.getElementById('card-'+id);if(el)el.classList.toggle('open');}
 async function desasignarResumen(id,tipo,ev){
