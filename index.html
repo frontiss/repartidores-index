@@ -704,10 +704,11 @@ function buildAssignView(filtro){
   var fechas=Object.keys(grupos).sort();
   var hoyStr=new Date().toISOString().substring(0,10);
   var ayerStr=new Date(Date.now()-86400000).toISOString().substring(0,10);
+  function fmtFecha(f){if(!f||f.length<10)return f;var p=f.split('-');return p[2]+'/'+p[1]+'/'+p[0].substring(2);}
   function fechaLabel(f){
-    if(f===hoyStr)return 'Hoy \u2014 '+f;
-    if(f===ayerStr)return 'Ayer \u2014 '+f;
-    return f;
+    if(f===hoyStr)return 'Hoy — '+fmtFecha(f);
+    if(f===ayerStr)return 'Ayer — '+fmtFecha(f);
+    return fmtFecha(f);
   }
   var checkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -767,7 +768,7 @@ function buildAssignView(filtro){
       +'<span class="assign-day-count">'+items.length+'</span>'
       +'<span class="assign-day-selall" onclick="event.stopPropagation();seleccionarDia(\''+fecha+'\')">Sel. todos</span>'
       +'</div>'
-      +'<div class="assign-day-body" style="display:'+(isOpen?'block':'none')+'">'+prevHTML+'</div>'
+      +'<div class="assign-day-body">'+prevHTML+'</div>'
       +'</div>';
   }).join('');
   updateSelCount();
@@ -776,9 +777,7 @@ function buildAssignView(filtro){
 function toggleDayGroup(fecha){
   var el=document.getElementById('dag-'+fecha);
   if(!el)return;
-  var isOpen=el.classList.toggle('open');
-  var body=el.querySelector('.assign-day-body');
-  if(body)body.style.display=isOpen?'block':'none';
+  el.classList.toggle('open');
 }
 
 function togglePrevGroup(gid){
