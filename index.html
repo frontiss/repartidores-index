@@ -1012,11 +1012,21 @@ function renderCard(e,ctx){
   var importeAMostrar=e.cobrado?(e.importe||0):(e.importe_total||e.importe||0);
   var _ic=e.cobrado?'var(--green)':'var(--teal)';var _ii=importeAMostrar>0?('€'+parseFloat(importeAMostrar).toFixed(2)+(e.cobrado?' ✔':'')):'nada';var importeBadge=importeAMostrar>0?('<span style="font-family:var(--rm);font-size:.72rem;font-weight:600;color:'+_ic+'">'+_ii+'</span>'):'';
   var importeModal=e.tipo==='albaran'?(e.importe_total||e.importe||0):(e.importe||0);
-  var actionHtml=isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+importeModal+',\''+( e.tipo||'albaran')+'\'  )">Marcar entregado</button>';
+  var desasignarBtn=ctx==='office'&&!isDone?'<button class="btn-desmarcar" onclick="desasignarResumen('+e.id+',\''+( e.tipo||'albaran')+'\',event)" style="color:var(--red);border-color:rgba(220,38,38,.3);">✕ Desasignar</button>':'';
+  var actionHtml=isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+importeModal+',\''+( e.tipo||'albaran')+'\')">Marcar entregado</button>'+desasignarBtn;
   var badges=[tipoBadge,fechaBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',noEntHtml,horaHtml,importeBadge,repBadge].join('');
   return '<div class="delivery-card '+(isDone?'entregado':'')+'" id="card-'+e.id+'"><div class="card-header" onclick="toggleCard('+e.id+')"><div class="card-status '+(isDone?'done':'pending')+'">'+(isDone?'\u2713':'\u2192')+'</div><div class="card-info"><div class="card-client">'+esc(e.cliente)+'</div><div class="card-meta"><span class="card-ref">'+e.nombre+'</span>'+badges+'</div></div><div class="card-arrow">&#xBB;</div></div><div class="card-body">'+notaHtml+notaRepHtml+(lineas?'<div class="card-lines">'+lineas+'</div>':'')+(actionHtml?'<div class="card-actions">'+actionHtml+'</div>':'')+'</div></div>';
 }
 function toggleCard(id){var el=document.getElementById('card-'+id);if(el)el.classList.toggle('open');}
+async function desasignarResumen(id,tipo,ev){
+  if(ev)ev.stopPropagation();
+  var ep=tipo==='factura'?'/facturas/'+id+'/asignar':'/entregas/'+id+'/asignar';
+  try{
+    await apiFetch(ep,{method:'POST',body:JSON.stringify({user_id:null})});
+    showToast('Desasignado correctamente','ok');
+    loadResumen();
+  }catch(e){showToast('Error: '+e.message,'err');}
+}
 
 // MODAL
 function openModal(pickingId,clientName,ev,importe,tipo){
