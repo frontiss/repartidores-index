@@ -230,6 +230,21 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .assign-day-body{display:none;padding:.4rem .5rem .5rem;background:var(--bg);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem;}
 .assign-day-group.open .assign-day-body{display:grid;}
 .assign-day-group:not(.open) .assign-day-body{display:none;}
+/* Subgrupos Prev dentro de cada día */
+.assign-prev-group{margin:.3rem 0;}
+.assign-prev-header{display:flex;align-items:center;gap:.4rem;padding:.3rem .5rem;cursor:pointer;user-select:none;border-radius:6px;transition:background .1s;}
+.assign-prev-header:hover{background:var(--surface2);}
+.assign-prev-arrow{font-size:.6rem;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.assign-prev-group.open .assign-prev-arrow{transform:rotate(90deg);}
+.assign-prev-label{font-family:var(--rh);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
+.assign-prev-label.p1{color:var(--blue);}
+.assign-prev-label.p2{color:var(--orange);}
+.assign-prev-label.other{color:var(--muted);}
+.assign-prev-count{font-family:var(--rm);font-size:.62rem;color:var(--muted2);background:var(--surface2);padding:.08rem .35rem;border-radius:10px;}
+.assign-prev-selall{font-family:var(--rm);font-size:.6rem;color:var(--orange);margin-left:auto;font-weight:600;}
+.assign-prev-body{display:none;padding:.3rem .2rem .1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem;}
+.assign-prev-group.open .assign-prev-body{display:grid;}
+.assign-prev-group:not(.open) .assign-prev-body{display:none;}
 /* ── BUSCADOR ── */
 .assign-search-wrap{position:relative;padding:.5rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
 .assign-search{width:100%;height:36px;border:1.5px solid var(--border);border-radius:8px;padding:0 .75rem 0 2rem;font-family:var(--rm);font-size:.85rem;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;}
@@ -663,14 +678,12 @@ function buildAssignView(filtro){
   var q=(filtro||'').toLowerCase().trim();
   if(q){
     pickings=pickings.filter(function(p){
-      return (p.cliente||'').toLowerCase().indexOf(q)>=0
+      return(p.cliente||'').toLowerCase().indexOf(q)>=0
           ||(p.nombre||'').toLowerCase().indexOf(q)>=0
           ||(p.carrier||'').toLowerCase().indexOf(q)>=0;
     });
   }
   var sorted=pickings.slice().sort(function(a,b){
-    var an=a.repartidor_id?1:0,bn=b.repartidor_id?1:0;
-    if(an!==bn)return an-bn;
     var af=(a.fecha||'').substring(0,10),bf=(b.fecha||'').substring(0,10);
     if(af!==bf)return af<bf?-1:1;
     var ap=carrierPrevNum(a.carrier),bp=carrierPrevNum(b.carrier);
@@ -697,34 +710,55 @@ function buildAssignView(filtro){
     return f;
   }
   var checkSvg='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function makeCard(p){
+    var key=p.tipo+p.id;
+    var sel=!!_seleccionados[key];
+    var cl=carrierLabel(p.carrier);
+    var clHtml=cl?'<span class="assign-card-cl">'+cl+'</span>':'';
+    var imp=(p.importe_total||0)>0?'<span class="assign-card-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
+    var cardClass='assign-card'+(sel?' selected':'');
+    return '<div class="'+cardClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')" title="'+esc(p.cliente)+'">'
+      +'<div class="assign-card-check">'+(sel?checkSvg:'')+'</div>'
+      +'<span class="assign-card-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
+      +'<div class="assign-card-body">'
+        +'<div class="assign-card-ref">'+esc(p.nombre)+clHtml+'</div>'
+        +'<div class="assign-card-client">'+esc(p.cliente)+'</div>'
+        +(imp?'<div class="assign-card-bottom">'+imp+'</div>':'')
+      +'</div>'
+      +'</div>';
+  }
+
+  function makePrevGroup(fecha, prevNum, items, pgIdx){
+    var gid='dpg-'+fecha+'-p'+prevNum;
+    var isOpen=pgIdx===0;
+    var labelClass=prevNum===1?'p1':prevNum===2?'p2':'other';
+    var labelTxt=prevNum===1?'Preventa 1':prevNum===2?'Preventa 2':'Sin preventa';
+    var cards=items.map(makeCard).join('');
+    return '<div class="assign-prev-group'+(isOpen?' open':'')+'" id="'+gid+'">'
+      +'<div class="assign-prev-header" onclick="togglePrevGroup(\''+gid+'\')">'
+      +'<span class="assign-prev-arrow">&#x25B6;</span>'
+      +'<span class="assign-prev-label '+labelClass+'">'+labelTxt+'</span>'
+      +'<span class="assign-prev-count">'+items.length+'</span>'
+      +'<span class="assign-prev-selall" onclick="event.stopPropagation();seleccionarPrev(\''+fecha+'\','+prevNum+')">Sel. todos</span>'
+      +'</div>'
+      +'<div class="assign-prev-body">'+cards+'</div>'
+      +'</div>';
+  }
+
   lst.innerHTML=fechas.map(function(fecha,gi){
     var items=grupos[fecha];
-    var isOpen=gi===0; // primer grupo abierto por defecto
-    var cards=items.map(function(p){
-      var key=p.tipo+p.id;
-      var sel=!!_seleccionados[key];
-      var cl=carrierLabel(p.carrier);
-      var clHtml=cl?'<span class="assign-card-cl">'+cl+'</span>':'';
-      var imp=(p.importe_total||0)>0?'<span class="assign-card-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
-      var repLabel='';
-      var cardClass='assign-card'+(sel?' selected':'');
-      if(p.repartidor_id){
-        var d=(state.drivers||[]).find(function(x){return x.id===p.repartidor_id;});
-        var pn=d?driverPrevNum(d):0;
-        var rn=p.repartidor?p.repartidor.replace(/preventa\s*\d*/gi,'').replace(/repartidor\s*\d*/gi,'').trim():p.repartidor||'';
-        var pLabel=pn?'P'+pn:'?';
-        repLabel='<span class="assign-card-asignado '+(pn===1?'p1':pn===2?'p2':'')+'">'+pLabel+' '+esc(rn)+'<button class="btn-desasignar-card" onclick="event.stopPropagation();desasignarItem(\''+(p.tipo)+'\','+p.id+')" title="Desasignar">✕</button></span>';
-        cardClass+=pn===1?' assigned-p1':pn===2?' assigned-p2':' assigned-other';
-      }
-      return '<div class="'+cardClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')" title="'+esc(p.cliente)+'">'
-        +'<div class="assign-card-check">'+(sel?checkSvg:'')+'</div>'
-        +'<span class="assign-card-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
-        +'<div class="assign-card-body">'
-          +'<div class="assign-card-ref">'+esc(p.nombre)+clHtml+'</div>'
-          +'<div class="assign-card-client">'+esc(p.cliente)+'</div>'
-          +'<div class="assign-card-bottom">'+(imp||repLabel?(imp+repLabel):'')+'</div>'
-        +'</div>'
-        +'</div>';
+    var isOpen=gi===0;
+    // Sub-agrupar por preventa
+    var prevGrupos={};
+    items.forEach(function(p){
+      var pn=carrierPrevNum(p.carrier)||0;
+      if(!prevGrupos[pn])prevGrupos[pn]=[];
+      prevGrupos[pn].push(p);
+    });
+    var prevNums=Object.keys(prevGrupos).map(Number).sort(function(a,b){return(a||99)-(b||99);});
+    var prevHTML=prevNums.map(function(pn,pi){
+      return makePrevGroup(fecha,pn,prevGrupos[pn],pi);
     }).join('');
     return '<div class="assign-day-group'+(isOpen?' open':'')+'" id="dag-'+fecha+'">'
       +'<div class="assign-day-header" onclick="toggleDayGroup(\''+fecha+'\')">'
@@ -733,10 +767,36 @@ function buildAssignView(filtro){
       +'<span class="assign-day-count">'+items.length+'</span>'
       +'<span class="assign-day-selall" onclick="event.stopPropagation();seleccionarDia(\''+fecha+'\')">Sel. todos</span>'
       +'</div>'
-      +'<div class="assign-day-body">'+cards+'</div>'
+      +'<div class="assign-day-body" style="display:'+(isOpen?'block':'none')+'">'+prevHTML+'</div>'
       +'</div>';
   }).join('');
   updateSelCount();
+}
+
+function toggleDayGroup(fecha){
+  var el=document.getElementById('dag-'+fecha);
+  if(!el)return;
+  var isOpen=el.classList.toggle('open');
+  var body=el.querySelector('.assign-day-body');
+  if(body)body.style.display=isOpen?'block':'none';
+}
+
+function togglePrevGroup(gid){
+  var el=document.getElementById(gid);
+  if(el)el.classList.toggle('open');
+}
+
+function seleccionarPrev(fecha,prevNum){
+  var items=state.allPickings.filter(function(p){
+    return(p.fecha||'').substring(0,10)===fecha&&carrierPrevNum(p.carrier)===prevNum;
+  });
+  var allSel=items.every(function(p){return!!_seleccionados[p.tipo+p.id];});
+  items.forEach(function(p){
+    var key=p.tipo+p.id;
+    if(allSel)delete _seleccionados[key];
+    else _seleccionados[key]={id:p.id,tipo:p.tipo};
+  });
+  buildAssignView(document.getElementById('assign-search')?document.getElementById('assign-search').value:'');
 }
 
 function toggleDayGroup(fecha){
