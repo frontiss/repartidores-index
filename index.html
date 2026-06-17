@@ -217,6 +217,16 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .assign-row-asignado.p1{background:rgba(59,130,246,.12);color:var(--blue);}
 .assign-row-asignado.p2{background:var(--orange-bg);color:var(--orange);}
 .assign-row-fecha{font-family:var(--rm);font-size:.62rem;color:var(--muted);}
+.assign-day-group{margin-bottom:.75rem;}
+.assign-day-header{display:flex;align-items:center;gap:.5rem;padding:.35rem .1rem;margin-bottom:.3rem;cursor:pointer;user-select:none;}
+.assign-day-label{font-family:var(--rh);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+.assign-day-count{font-family:var(--rm);font-size:.68rem;color:var(--muted2);background:var(--surface2);padding:.1rem .4rem;border-radius:10px;}
+.assign-day-selall{font-family:var(--rm);font-size:.65rem;color:var(--orange);margin-left:auto;cursor:pointer;font-weight:600;}
+.assign-search-wrap{padding:.5rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.assign-search{width:100%;height:36px;border:1.5px solid var(--border);border-radius:8px;padding:0 .75rem 0 2rem;font-family:var(--rm);font-size:.85rem;background:var(--bg);color:var(--text);outline:none;box-sizing:border-box;}
+.assign-search:focus{border-color:var(--orange);}
+.assign-search-wrap{position:relative;}
+.assign-search-icon{position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.9rem;}
 .chip-top{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;}
 .chip-tipo{font-size:.6rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   padding:.15rem .35rem;border-radius:4px;flex-shrink:0;}
@@ -384,6 +394,7 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
     <div style="padding:.5rem 1rem;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
       <button id="btn-auto" onclick="autoAsignar()" style="width:100%;height:44px;background:var(--orange);color:#fff;font-family:var(--rh);font-size:1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:10px;box-shadow:0 2px 8px rgba(245,130,10,.3);">&#x26A1; Auto-asignar por preventa</button>
     </div>
+    <div class="assign-search-wrap"><span class="assign-search-icon">&#x1F50D;</span><input class="assign-search" id="assign-search" type="text" placeholder="Buscar cliente, referencia..." oninput="filterAssignList(this.value)"></div>
     <div class="assign-toolbar" id="assign-toolbar">
       <span class="assign-toolbar-count" id="assign-sel-count">0 seleccionados</span>
       <button class="btn-asignar prev1" id="btn-asignar-p1" onclick="asignarSeleccionados('prev1')" disabled>Asignar a Prev1</button>
@@ -637,53 +648,103 @@ async function loadAssignView(){
   }
 }
 
-function buildAssignView(){
+function buildAssignView(filtro){
   var pickings = state.allPickings;
   var lst = document.getElementById('assign-list');
-  // Ordenar: primero los sin asignar, luego por carrier, luego por cliente
+  var q = (filtro||'').toLowerCase().trim();
+  // Filtrar por búsqueda
+  if(q){
+    pickings = pickings.filter(function(p){
+      return (p.cliente||'').toLowerCase().indexOf(q)>=0
+          || (p.nombre||'').toLowerCase().indexOf(q)>=0
+          || (p.carrier||'').toLowerCase().indexOf(q)>=0;
+    });
+  }
+  // Ordenar: sin asignar primero, luego por fecha, luego por carrier, luego por cliente
   var sorted = pickings.slice().sort(function(a,b){
-    var an = a.repartidor_id?1:0, bn = b.repartidor_id?1:0;
+    var an=a.repartidor_id?1:0, bn=b.repartidor_id?1:0;
     if(an!==bn) return an-bn;
-    var ap = carrierPrevNum(a.carrier), bp = carrierPrevNum(b.carrier);
+    var af=(a.fecha||'').substring(0,10), bf=(b.fecha||'').substring(0,10);
+    if(af!==bf) return af<bf?-1:1;
+    var ap=carrierPrevNum(a.carrier), bp=carrierPrevNum(b.carrier);
     if(ap!==bp) return ap-bp;
     return (a.cliente||'').localeCompare(b.cliente||'');
   });
   if(!sorted.length){
-    lst.innerHTML = '<div class="empty-state"><div class="empty-icon">&#x2705;</div><div class="empty-title">Todo asignado</div></div>';
-    updateSelCount();
-    return;
+    lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x2705;</div><div class="empty-title">'+(q?'Sin resultados':'Todo asignado')+'</div></div>';
+    updateSelCount();return;
   }
-  lst.innerHTML = sorted.map(function(p){
-    var key = p.tipo+p.id;
-    var sel = !!_seleccionados[key];
-    var lines = (p.lineas||[]).slice(0,2).map(function(l){return l.cantidad+'x '+l.producto;}).join(', ');
-    var more = (p.lineas||[]).length>2?' +'+(p.lineas.length-2):'';
-    var linesStr = lines?(esc(lines)+more):'';
-    var cl = carrierLabel(p.carrier);
-    var clHtml = cl?'<span style="font-family:var(--rm);font-size:.6rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;background:var(--orange-bg);color:var(--orange)">'+cl+'</span>':'';
-    var fecha = ((p.fecha||'')+'').substring(0,10);
-    var imp = (p.importe_total||0)>0?'<span class="assign-row-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
-    var repLabel = '';
-    var rowClass = 'assign-row'+(sel?' selected':'');
-    if(p.repartidor_id){
-      var d = (state.drivers||[]).find(function(x){return x.id===p.repartidor_id;});
-      var pn = d?driverPrevNum(d):0;
-      var rn = p.repartidor?p.repartidor.replace(/preventa\s*\d*/gi,'').replace(/repartidor\s*\d*/gi,'').trim():p.repartidor||'';
-      repLabel = '<span class="assign-row-asignado '+(pn===1?'p1':pn===2?'p2':'')+'">'+(pn?'P'+pn+' ':'')+esc(rn)+'</span>';
-      rowClass += pn===1?' assigned-p1':pn===2?' assigned-p2':' assigned-other';
-    }
-    return '<div class="'+rowClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')">'
-      +'<div class="assign-row-check">'+(sel?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>'
-      +'<span class="assign-row-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
-      +'<div class="assign-row-body">'
-        +'<div class="assign-row-top"><span class="assign-row-ref">'+esc(p.nombre)+'</span>'+clHtml+'<span class="assign-row-fecha">'+fecha+'</span></div>'
-        +'<div class="assign-row-client">'+esc(p.cliente)+'</div>'
-        +(linesStr?'<div class="assign-row-lines">'+linesStr+'</div>':'')
+  // Agrupar por fecha
+  var grupos={};
+  sorted.forEach(function(p){
+    var fecha=(p.fecha||'').substring(0,10)||'Sin fecha';
+    if(!grupos[fecha]) grupos[fecha]=[];
+    grupos[fecha].push(p);
+  });
+  var fechas=Object.keys(grupos).sort();
+  // Hoy y ayer para etiquetas
+  var hoyStr=new Date().toISOString().substring(0,10);
+  var ayerStr=new Date(Date.now()-86400000).toISOString().substring(0,10);
+  function fechaLabel(f){
+    if(f===hoyStr) return 'Hoy \u2014 '+f;
+    if(f===ayerStr) return 'Ayer \u2014 '+f;
+    return f;
+  }
+  lst.innerHTML=fechas.map(function(fecha){
+    var items=grupos[fecha];
+    var rows=items.map(function(p){
+      var key=p.tipo+p.id;
+      var sel=!!_seleccionados[key];
+      var lns=(p.lineas||[]).slice(0,2).map(function(l){return l.cantidad+'x '+l.producto;}).join(', ');
+      var more=(p.lineas||[]).length>2?' +'+(p.lineas.length-2):'';
+      var cl=carrierLabel(p.carrier);
+      var clHtml=cl?'<span style="font-family:var(--rm);font-size:.6rem;font-weight:700;padding:.1rem .3rem;border-radius:3px;background:var(--orange-bg);color:var(--orange)">'+cl+'</span>':'';
+      var imp=(p.importe_total||0)>0?'<span class="assign-row-importe">\u20AC'+parseFloat(p.importe_total).toFixed(2)+'</span>':'';
+      var repLabel='';
+      var rowClass='assign-row'+(sel?' selected':'');
+      if(p.repartidor_id){
+        var d=(state.drivers||[]).find(function(x){return x.id===p.repartidor_id;});
+        var pn=d?driverPrevNum(d):0;
+        var rn=p.repartidor?p.repartidor.replace(/preventa\s*\d*/gi,'').replace(/repartidor\s*\d*/gi,'').trim():p.repartidor||'';
+        repLabel='<span class="assign-row-asignado '+(pn===1?'p1':pn===2?'p2':'')+'">'+(pn?'P'+pn+' ':'')+esc(rn)+'</span>';
+        rowClass+=pn===1?' assigned-p1':pn===2?' assigned-p2':' assigned-other';
+      }
+      return '<div class="'+rowClass+'" onclick="toggleSelRow(this,\''+p.tipo+'\','+p.id+')">'
+        +'<div class="assign-row-check">'+(sel?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>'
+        +'<span class="assign-row-tipo '+p.tipo+'">'+(p.tipo==='factura'?'FAC':'ALB')+'</span>'
+        +'<div class="assign-row-body">'
+          +'<div class="assign-row-top"><span class="assign-row-ref">'+esc(p.nombre)+'</span>'+clHtml+'</div>'
+          +'<div class="assign-row-client">'+esc(p.cliente)+'</div>'
+          +(lns?'<div class="assign-row-lines">'+esc(lns)+more+'</div>':'')
+        +'</div>'
+        +'<div class="assign-row-right">'+imp+repLabel+'</div>'
+        +'</div>';
+    }).join('');
+    return '<div class="assign-day-group">'
+      +'<div class="assign-day-header" onclick="seleccionarDia(\''+fecha+'\')">'
+      +'<span class="assign-day-label">'+fechaLabel(fecha)+'</span>'
+      +'<span class="assign-day-count">'+items.length+'</span>'
+      +'<span class="assign-day-selall">Seleccionar todos</span>'
       +'</div>'
-      +'<div class="assign-row-right">'+imp+repLabel+'</div>'
+      +rows
       +'</div>';
   }).join('');
   updateSelCount();
+}
+
+function seleccionarDia(fecha){
+  var items=state.allPickings.filter(function(p){return (p.fecha||'').substring(0,10)===fecha;});
+  var allSel=items.every(function(p){return !!_seleccionados[p.tipo+p.id];});
+  items.forEach(function(p){
+    var key=p.tipo+p.id;
+    if(allSel) delete _seleccionados[key];
+    else _seleccionados[key]={id:p.id,tipo:p.tipo};
+  });
+  buildAssignView(document.getElementById('assign-search')?document.getElementById('assign-search').value:'');
+}
+
+function filterAssignList(q){
+  buildAssignView(q);
 }
 
 function toggleSelRow(el, tipo, id){
