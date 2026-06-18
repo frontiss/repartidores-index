@@ -664,10 +664,9 @@ function carrierPrevNum(carrier){
 function driverPrevNum(driver){
   if(!driver) return 0;
   var n = ((driver.login||'')+(driver.name||'')).toLowerCase();
-  if(n.indexOf('preventa 1')>=0||n.match(/repartidor2?@/)) return 1;
-  if(n.indexOf('preventa 2')>=0||n.match(/repartidor@/)) return 2;
-  // fallback por número en login
-  var m = n.match(/\d+/); return m?parseInt(m[0]):0;
+  if(n.indexOf('preventa 1')>=0||/repartidor2@/.test(n)) return 1;
+  if(n.indexOf('preventa 2')>=0||(/repartidor@/.test(n)&&!/repartidor2@/.test(n))) return 2;
+  var m=n.match(/\d+/); return m?parseInt(m[0]):0;
 }
 
 async function loadAssignView(){
