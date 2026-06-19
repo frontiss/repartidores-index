@@ -393,7 +393,7 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
     <button class="btn-refresh" onclick="loadDriverDeliveries()">&#x21BB; Actualizar</button>
   </div>
   <!-- Pendientes -->
-  <div class="scroll-area" id="driver-list" style="display:flex"></div>
+  <div class="scroll-area" id="driver-list"></div>
   <!-- Historial -->
   <div class="scroll-area" id="driver-historial" style="display:none">
     <div style="padding:.6rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
@@ -1088,7 +1088,7 @@ function driverTab(tab){
     var btn=document.getElementById('dtab-'+t);
     var panel=document.getElementById('driver-'+t);
     if(btn)btn.classList.toggle('active',t===tab);
-    if(panel)panel.style.display=t===tab?'flex':'none';
+    if(panel)panel.style.display=t===tab?'':'none';
   });
   // Inicializar fechas por defecto
   if(tab==='historial'){
