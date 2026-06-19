@@ -383,12 +383,37 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
       <button class="btn-logout" onclick="logout()">Salir</button>
     </div>
   </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="driverTab('pendientes')" id="dtab-pendientes">Pendientes</button>
+    <button class="tab-btn" onclick="driverTab('historial')" id="dtab-historial">&#x1F4CB; Historial</button>
+    <button class="tab-btn" onclick="driverTab('liquidacion')" id="dtab-liquidacion">&#x1F4B0; Liquidaci&#xF3;n</button>
+  </div>
   <div class="date-bar">
     <div class="date-text" id="driver-date">&#x2014;</div>
     <button class="btn-refresh" onclick="loadDriverDeliveries()">&#x21BB; Actualizar</button>
   </div>
-  <div class="scroll-area" id="driver-list">
-    <div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando repartos&#x2026;</div></div>
+  <!-- Pendientes -->
+  <div class="scroll-area" id="driver-list"></div>
+  <!-- Historial -->
+  <div class="scroll-area" id="driver-historial" style="display:none">
+    <div style="padding:.6rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+      <label style="font-family:var(--rm);font-size:.78rem;color:var(--muted)">Desde</label>
+      <input type="date" id="hist-desde" style="border:1.5px solid var(--border);border-radius:7px;padding:.3rem .5rem;font-family:var(--rm);font-size:.82rem;background:var(--bg);color:var(--text)">
+      <label style="font-family:var(--rm);font-size:.78rem;color:var(--muted)">Hasta</label>
+      <input type="date" id="hist-hasta" style="border:1.5px solid var(--border);border-radius:7px;padding:.3rem .5rem;font-family:var(--rm);font-size:.82rem;background:var(--bg);color:var(--text)">
+      <button onclick="buscarHistorial()" style="background:var(--orange);color:#fff;border:none;border-radius:7px;padding:.35rem .8rem;font-family:var(--rh);font-size:.78rem;font-weight:700;cursor:pointer;">Buscar</button>
+    </div>
+    <div id="driver-historial-list"></div>
+  </div>
+  <!-- Liquidación -->
+  <div class="scroll-area" id="driver-liquidacion" style="display:none">
+    <div style="padding:.6rem .75rem;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+      <label style="font-family:var(--rm);font-size:.78rem;color:var(--muted)">Fecha</label>
+      <input type="date" id="liq-fecha" style="border:1.5px solid var(--border);border-radius:7px;padding:.3rem .5rem;font-family:var(--rm);font-size:.82rem;background:var(--bg);color:var(--text)">
+      <button onclick="generarLiquidacion()" style="background:var(--orange);color:#fff;border:none;border-radius:7px;padding:.35rem .8rem;font-family:var(--rh);font-size:.78rem;font-weight:700;cursor:pointer;">Ver</button>
+      <button onclick="imprimirLiquidacion()" style="background:var(--surface2);color:var(--text);border:1.5px solid var(--border);border-radius:7px;padding:.35rem .8rem;font-family:var(--rh);font-size:.78rem;font-weight:700;cursor:pointer;">&#x1F5A8; Imprimir</button>
+    </div>
+    <div id="driver-liquidacion-content"></div>
   </div>
 </div>
 
@@ -1051,11 +1076,103 @@ async function loadDriverDeliveries(){
     if(!entregas.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4E6;</div><div class="empty-title">Sin repartos hoy</div><div class="empty-sub">No tienes entregas asignadas</div></div>';return;}
     var html='<div class="stats-bar"><div class="stat-card"><div class="stat-num orange">'+entregas.length+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num green">'+done.length+'</div><div class="stat-label">Entregados</div></div><div class="stat-card"><div class="stat-num red">'+pending.length+'</div><div class="stat-label">Pendientes</div></div></div>';
     if(pending.length){html+='<div class="section-header"><div class="section-title">Pendientes</div><div class="section-count">'+pending.length+'</div></div>';pending.forEach(function(e){html+=renderCard(e,'driver');});}
-    if(done.length){html+='<div class="section-header" style="margin-top:1rem"><div class="section-title">Entregados</div><div class="section-count">'+done.length+'</div></div>';done.forEach(function(e){html+=renderCard(e,'driver');});}
+    if(!pending.length){html+='<div class="empty-state"><div class="empty-icon">&#x2705;</div><div class="empty-title">Todo entregado</div></div>';}
     list.innerHTML=html;
   }catch(e){
     list.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
   }
+}
+
+function driverTab(tab){
+  ['pendientes','historial','liquidacion'].forEach(function(t){
+    var btn=document.getElementById('dtab-'+t);
+    var panel=document.getElementById('driver-'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
+    if(panel)panel.style.display=t===tab?'':'none';
+  });
+  // Inicializar fechas por defecto
+  if(tab==='historial'){
+    var hoy=new Date().toISOString().substring(0,10);
+    var hace7=new Date(Date.now()-7*86400000).toISOString().substring(0,10);
+    if(!document.getElementById('hist-desde').value)document.getElementById('hist-desde').value=hace7;
+    if(!document.getElementById('hist-hasta').value)document.getElementById('hist-hasta').value=hoy;
+  }
+  if(tab==='liquidacion'){
+    var hoy=new Date().toISOString().substring(0,10);
+    if(!document.getElementById('liq-fecha').value)document.getElementById('liq-fecha').value=hoy;
+    generarLiquidacion();
+  }
+}
+
+async function buscarHistorial(){
+  var desde=document.getElementById('hist-desde').value;
+  var hasta=document.getElementById('hist-hasta').value;
+  var lst=document.getElementById('driver-historial-list');
+  if(!desde||!hasta){showToast('Selecciona fechas','err');return;}
+  lst.innerHTML='<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Buscando\u2026</div></div>';
+  try{
+    var data=await apiFetch('/entregas/historial?desde='+desde+'&hasta='+hasta);
+    var entregas=data.entregas||[];
+    if(!entregas.length){lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4CB;</div><div class="empty-title">Sin entregas en ese periodo</div></div>';return;}
+    var html='<div class="section-header"><div class="section-title">'+entregas.length+' entrega'+(entregas.length===1?'':'s')+'</div></div>';
+    entregas.forEach(function(e){html+=renderCard(e,'driver');});
+    lst.innerHTML=html;
+  }catch(e){
+    lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
+  }
+}
+
+async function generarLiquidacion(){
+  var fecha=document.getElementById('liq-fecha').value;
+  var cont=document.getElementById('driver-liquidacion-content');
+  if(!fecha){return;}
+  cont.innerHTML='<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Calculando\u2026</div></div>';
+  try{
+    var data=await apiFetch('/entregas/liquidacion?fecha='+fecha);
+    var liq=data.liquidacion||{};
+    var rows=(liq.detalle||[]).map(function(d){
+      return '<tr><td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.82rem">'+esc(d.cliente)+'</td>'
+        +'<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--muted)">'+esc(d.referencia)+'</td>'
+        +'<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.82rem;text-align:center">'+esc(d.forma_pago||'-')+'</td>'
+        +'<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.82rem;text-align:right;color:var(--teal);font-weight:600">'+(d.importe>0?'\u20AC'+parseFloat(d.importe).toFixed(2):'-')+'</td>'
+        +'</tr>';
+    }).join('');
+    var html='<div style="padding:.75rem">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">'
+      +'<div><div style="font-family:var(--rh);font-size:1rem;font-weight:800">Liquidaci\u00F3n '+fecha+'</div>'
+      +'<div style="font-family:var(--rm);font-size:.78rem;color:var(--muted)">'+(liq.repartidor||'')+'</div></div>'
+      +'<div style="text-align:right"><div style="font-family:var(--rm);font-size:.72rem;color:var(--muted)">Total cobrado</div>'
+      +'<div style="font-family:var(--rh);font-size:1.4rem;font-weight:900;color:var(--teal)">\u20AC'+parseFloat(liq.total_cobrado||0).toFixed(2)+'</div></div>'
+      +'</div>'
+      +'<div style="margin-bottom:.5rem;font-family:var(--rm);font-size:.75rem;color:var(--muted)">'
+      +'Entregas: '+(liq.total_entregas||0)+' &nbsp;\u00B7&nbsp; Cobradas: '+(liq.total_cobradas||0)
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+      +'<thead><tr style="background:var(--surface2)">'
+      +'<th style="padding:.4rem .5rem;font-family:var(--rh);font-size:.7rem;text-align:left;color:var(--muted)">Cliente</th>'
+      +'<th style="padding:.4rem .5rem;font-family:var(--rh);font-size:.7rem;text-align:left;color:var(--muted)">Referencia</th>'
+      +'<th style="padding:.4rem .5rem;font-family:var(--rh);font-size:.7rem;text-align:center;color:var(--muted)">Forma pago</th>'
+      +'<th style="padding:.4rem .5rem;font-family:var(--rh);font-size:.7rem;text-align:right;color:var(--muted)">Importe</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody>'
+      +'<tfoot><tr style="background:var(--surface)">'
+      +'<td colspan="3" style="padding:.5rem;font-family:var(--rh);font-size:.82rem;font-weight:700">TOTAL</td>'
+      +'<td style="padding:.5rem;font-family:var(--rh);font-size:.9rem;font-weight:900;text-align:right;color:var(--teal)">\u20AC'+parseFloat(liq.total_cobrado||0).toFixed(2)+'</td>'
+      +'</tr></tfoot>'
+      +'</table></div>';
+    cont.innerHTML=html;
+  }catch(e){
+    cont.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
+  }
+}
+
+function imprimirLiquidacion(){
+  var cont=document.getElementById('driver-liquidacion-content');
+  var win=window.open('','_blank');
+  win.document.write('<html><head><title>Liquidaci\u00F3n</title><style>body{font-family:sans-serif;padding:1rem}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:.4rem .5rem;font-size:.85rem}th{background:#f5f5f5}tfoot td{font-weight:700}@media print{button{display:none}}</style></head><body>');
+  win.document.write(cont.innerHTML);
+  win.document.write('</body></html>');
+  win.document.close();
+  win.print();
 }
 
 // CARD
