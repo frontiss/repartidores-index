@@ -1090,6 +1090,9 @@ function driverTab(tab){
     if(btn)btn.classList.toggle('active',t===tab);
     if(panel)panel.style.display=t===tab?'':'none';
   });
+  // Ocultar stats-bar en historial y liquidación
+  var statsBar=document.querySelector('#driver-list .stats-bar');
+  if(statsBar)statsBar.style.display=tab==='pendientes'?'':'none';
   // Inicializar fechas por defecto
   if(tab==='historial'){
     var hoy=new Date().toISOString().substring(0,10);
@@ -1115,7 +1118,7 @@ async function buscarHistorial(){
     var entregas=data.entregas||[];
     if(!entregas.length){lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4CB;</div><div class="empty-title">Sin entregas en ese periodo</div></div>';return;}
     var html='<div class="section-header"><div class="section-title">'+entregas.length+' entrega'+(entregas.length===1?'':'s')+'</div></div>';
-    entregas.forEach(function(e){html+=renderCard(e,'driver');});
+    entregas.forEach(function(e){html+=renderCard(e,'historial');});
     lst.innerHTML=html;
   }catch(e){
     lst.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
@@ -1191,8 +1194,8 @@ function renderCard(e,ctx){
   var _ic=e.cobrado?'var(--green)':'var(--teal)';var _ii=importeAMostrar>0?('€'+parseFloat(importeAMostrar).toFixed(2)+(e.cobrado?' ✔':'')):'nada';var importeBadge=importeAMostrar>0?('<span style="font-family:var(--rm);font-size:.72rem;font-weight:600;color:'+_ic+'">'+_ii+'</span>'):'';
   var importeModal=e.tipo==='albaran'?(e.importe_total||e.importe||0):(e.importe||0);
   var desasignarBtn=ctx==='office'&&!isDone?'<button class="btn-desmarcar" onclick="desasignarResumen('+e.id+',\''+( e.tipo||'albaran')+'\',event)" style="color:var(--red);border-color:rgba(220,38,38,.3);">✕ Desasignar</button>':'';
-  var actionHtml=isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+importeModal+',\''+( e.tipo||'albaran')+'\')">Marcar entregado</button>'+desasignarBtn;
-  var badges=[tipoBadge,fechaBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',noEntHtml,horaHtml,importeBadge,repBadge].join('');
+  var actionHtml=ctx==='historial'?'':(isDone?(ctx==='office'?'<button class="btn-desmarcar" onclick="desmarcarEntrega('+e.id+',event)">Desmarcar</button>':''):'<button class="btn-entregar" onclick="openModal('+e.id+',\''+esc(e.cliente)+'\',event,'+importeModal+',\''+( e.tipo||'albaran')+'\')">Marcar entregado</button>'+desasignarBtn);
+  var badges=ctx==='historial'?[tipoBadge,fechaBadge,horaHtml,importeBadge].join(''):[tipoBadge,fechaBadge,isDone?'<span class="badge badge-done">\u2713 Entregado</span>':'<span class="badge badge-pending">Pendiente</span>',e.cobrado?'<span class="badge badge-cobrado">Cobrado</span>':'',noEntHtml,horaHtml,importeBadge,repBadge].join('');
   var checkHtml=ctx==='office'&&!isDone?'<div class="card-checkbox" onclick="toggleResumenSel('+e.id+',\''+( e.tipo||'albaran')+'\',event)"></div>':'';
   return '<div class="delivery-card '+(isDone?'entregado':'')+'" id="card-'+e.id+'"><div class="card-header" onclick="toggleCard('+e.id+')">'+checkHtml+'<div class="card-status '+(isDone?'done':'pending')+'">'+(isDone?'\u2713':'\u2192')+'</div><div class="card-info"><div class="card-client">'+esc(e.cliente)+'</div><div class="card-meta"><span class="card-ref">'+e.nombre+'</span>'+badges+'</div></div><div class="card-arrow">&#xBB;</div></div><div class="card-body">'+notaHtml+notaRepHtml+(lineas?'<div class="card-lines">'+lineas+'</div>':'')+(actionHtml?'<div class="card-actions">'+actionHtml+'</div>':'')+'</div></div>';
 }
