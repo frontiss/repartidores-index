@@ -739,8 +739,8 @@ function buildAssignView(filtro){
     grupos[f].push(p);
   });
   var fechas=Object.keys(grupos).sort();
-  var hoyStr=new Date().toISOString().substring(0,10);
-  var ayerStr=new Date(Date.now()-86400000).toISOString().substring(0,10);
+  var hoyStr=localDateStr();
+  var ayerStr=localDateStr(new Date(Date.now()-86400000));
   function fmtFecha(f){if(!f||f.length<10)return f;var p=f.split('-');return p[2]+'/'+p[1]+'/'+p[0].substring(2);}
   function fechaLabel(f){
     if(f===hoyStr)return 'Hoy — '+fmtFecha(f);
@@ -1095,13 +1095,13 @@ function driverTab(tab){
   if(driverList)driverList.style.display=tab==='pendientes'?'':'none';
   // Inicializar fechas por defecto
   if(tab==='historial'){
-    var hoy=new Date().toISOString().substring(0,10);
-    var hace7=new Date(Date.now()-7*86400000).toISOString().substring(0,10);
+    var hoy=localDateStr();
+    var hace7=localDateStr(new Date(Date.now()-7*86400000));
     if(!document.getElementById('hist-desde').value)document.getElementById('hist-desde').value=hace7;
     if(!document.getElementById('hist-hasta').value)document.getElementById('hist-hasta').value=hoy;
   }
   if(tab==='liquidacion'){
-    var hoy=new Date().toISOString().substring(0,10);
+    var hoy=localDateStr();
     if(!document.getElementById('liq-fecha').value)document.getElementById('liq-fecha').value=hoy;
     generarLiquidacion();
   }
@@ -1384,6 +1384,11 @@ function openGoogleMaps(){
 // UTILS
 function formatDate(iso){if(!iso)return'';var d=new Date(iso+'T00:00:00');return d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});}
 function formatHora(dt){if(!dt)return'';var d=new Date(dt.replace(' ','T')+'Z');return d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});}
+function localDateStr(d){
+  d=d||new Date();
+  var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 var _toastTimer;
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';clearTimeout(_toastTimer);_toastTimer=setTimeout(function(){t.className='toast';},2800);}
