@@ -1090,6 +1090,9 @@ function driverTab(tab){
     if(btn)btn.classList.toggle('active',t===tab);
     if(panel)panel.style.display=t===tab?'':'none';
   });
+  // Ocultar también el div driver-list si no estamos en pendientes
+  var driverList=document.getElementById('driver-list');
+  if(driverList)driverList.style.display=tab==='pendientes'?'':'none';
   // Inicializar fechas por defecto
   if(tab==='historial'){
     var hoy=new Date().toISOString().substring(0,10);
