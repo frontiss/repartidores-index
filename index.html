@@ -479,8 +479,9 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
   </div>
 
   <!-- RESUMEN TOOLBAR (selección para desasignar) -->
-  <div class="resumen-toolbar" id="resumen-toolbar" style="display:none;">
-    <span class="resumen-sel-count" id="resumen-sel-count">0 seleccionados</span>
+  <div class="resumen-toolbar" id="resumen-toolbar" style="display:flex;">
+    <span class="resumen-sel-count" id="resumen-sel-count">Selecciona documentos para desasignar</span>
+    <button onclick="seleccionarTodosResumen()" style="font-family:var(--rm);font-size:.78rem;padding:.4rem .7rem;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;">Sel. todos</button>
     <button class="btn-desasignar-sel" id="btn-desasignar-sel" onclick="desasignarSelResumen()" disabled>&#x2715; Desasignar seleccionados</button>
     <button onclick="cancelarSelResumen()" style="font-family:var(--rm);font-size:.78rem;padding:.4rem .7rem;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;">Cancelar</button>
   </div>
@@ -648,8 +649,10 @@ function switchTab(tab){
   var av=document.getElementById('assign-view');
   var ca=document.getElementById('office-content');
   var mv=document.getElementById('mapa-view');
+  var tb=document.getElementById('resumen-toolbar');
   av.classList.remove('visible');av.style.display='none';
   ca.style.display='none';mv.style.display='none';
+  if(tb)tb.style.display=(tab==='resumen'||tab==='asignadas')?'flex':'none';
   if(tab==='asignar'){av.classList.add('visible');av.style.display='';loadAssignView();}
   else if(tab==='mapa'){mv.style.display='flex';loadMapa();}
   else{ca.style.display='';
@@ -1050,8 +1053,9 @@ function updateResumenToolbar(){
   var tb=document.getElementById('resumen-toolbar');
   var sc=document.getElementById('resumen-sel-count');
   var btn=document.getElementById('btn-desasignar-sel');
-  if(tb)tb.style.display=n>0?'flex':'none';
-  if(sc)sc.textContent=n+' seleccionado'+(n===1?'':'s');
+  // Solo visible en resumen y asignadas
+  if(tb)tb.style.display=(state.tab==='resumen'||state.tab==='asignadas')?'flex':'none';
+  if(sc)sc.textContent=n===0?'Selecciona documentos para desasignar':n+' seleccionado'+(n===1?'':'s');
   if(btn)btn.disabled=n===0;
 }
 function cancelarSelResumen(){
@@ -1065,15 +1069,45 @@ function cancelarSelResumen(){
 async function desasignarSelResumen(){
   var items=Object.values(_resumenSel);
   if(!items.length)return;
+  showProgress('Desasignando 0/'+items.length+'...');
   var ok=0,err=0;
   for(var i=0;i<items.length;i++){
     var item=items[i];
     var ep=item.tipo==='factura'?'/facturas/'+item.id+'/asignar':'/entregas/'+item.id+'/asignar';
+    updateProgress('Desasignando '+(i+1)+'/'+items.length+'...');
     try{await apiFetch(ep,{method:'POST',body:JSON.stringify({user_id:null})});ok++;}
     catch(e){err++;}
   }
-  showToast(ok+' desasignados'+(err?' ('+err+' errores)':''),'ok');
-  loadResumen();
+  hideProgress();
+  _resumenSel={};
+  showToast(ok+' desasignados'+(err?' ('+err+' errores)':''),err?'err':'ok');
+  // Recargar la vista actual
+  if(state.tab==='asignadas')loadAsignadas();
+  else loadResumen();
+}
+
+function seleccionarTodosResumen(){
+  // Buscar todas las tarjetas con checkbox visible en la pantalla
+  var checkboxes=document.querySelectorAll('#office-content .card-checkbox');
+  if(!checkboxes.length){showToast('No hay documentos seleccionables','err');return;}
+  var chk='<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  checkboxes.forEach(function(cb){
+    var card=cb.closest('.delivery-card');
+    if(!card)return;
+    var cardId=card.id.replace('card-','');
+    // Buscar tipo en el dataset o en el onclick
+    var onclickAttr=cb.getAttribute('onclick')||'';
+    var tipoMatch=onclickAttr.match(/'(albaran|factura)'/);
+    var tipo=tipoMatch?tipoMatch[1]:'albaran';
+    var key=tipo+cardId;
+    if(!_resumenSel[key]){
+      _resumenSel[key]={id:parseInt(cardId),tipo:tipo};
+      cb.classList.add('checked');
+      cb.innerHTML=chk;
+      card.style.outline='2px solid var(--orange)';
+    }
+  });
+  updateResumenToolbar();
 }
 
 // TODOS
