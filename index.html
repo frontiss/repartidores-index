@@ -778,7 +778,7 @@ function buildAssignView(filtro){
 
   function makePrevGroup(fecha, prevNum, items, pgIdx){
     var gid='dpg-'+fecha+'-p'+prevNum;
-    var isOpen=pgIdx===0;
+    var isOpen=true;  // todos los subgrupos abiertos por defecto
     var labelClass=prevNum===1?'p1':prevNum===2?'p2':'other';
     var labelTxt=prevNum===1?'Preventa 1':prevNum===2?'Preventa 2':'Sin preventa';
     var cards=items.map(makeCard).join('');
