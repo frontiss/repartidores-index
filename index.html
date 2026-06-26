@@ -431,6 +431,7 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
   </div>
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('asignar')" id="tab-asignar">Asignar</button>
+    <button class="tab-btn" onclick="switchTab('asignadas')" id="tab-asignadas">Asignadas</button>
     <button class="tab-btn" onclick="switchTab('resumen')" id="tab-resumen">Resumen</button>
     <button class="tab-btn" onclick="switchTab('todos')" id="tab-todos">Todos</button>
     <button class="tab-btn" onclick="switchTab('mapa')" id="tab-mapa">&#x1F5FA; Mapa</button>
@@ -651,11 +652,16 @@ function switchTab(tab){
   ca.style.display='none';mv.style.display='none';
   if(tab==='asignar'){av.classList.add('visible');av.style.display='';loadAssignView();}
   else if(tab==='mapa'){mv.style.display='flex';loadMapa();}
-  else{ca.style.display='';if(tab==='resumen')loadResumen();else loadTodos();}
+  else{ca.style.display='';
+    if(tab==='resumen')loadResumen();
+    else if(tab==='asignadas')loadAsignadas();
+    else loadTodos();
+  }
 }
 function refreshCurrentTab(){
   if(state.tab==='asignar')loadAssignView();
   else if(state.tab==='resumen')loadResumen();
+  else if(state.tab==='asignadas')loadAsignadas();
   else if(state.tab==='mapa')loadMapa();
   else loadTodos();
 }
@@ -885,17 +891,27 @@ function updateSelCount(){
 async function asignarSeleccionados(prev){
   var items = Object.values(_seleccionados);
   if(!items.length) return;
-  // Encontrar el driver de la preventa indicada
   var drivers = state.drivers||[];
   var driver = drivers.find(function(d){
     var pn = driverPrevNum(d);
     return prev==='prev1'?pn===1:pn===2;
   });
   if(!driver){showToast('No se encontró repartidor para '+prev,'err');return;}
+  // Indicador de progreso
+  var btn1=document.getElementById('btn-asignar-p1');
+  var btn2=document.getElementById('btn-asignar-p2');
+  var btnD=document.getElementById('btn-desasignar');
+  var sc=document.getElementById('assign-sel-count');
+  var origTxt=sc?sc.textContent:'';
+  if(btn1)btn1.disabled=true;
+  if(btn2)btn2.disabled=true;
+  if(btnD)btnD.disabled=true;
+  showProgress('Asignando 0/'+items.length+'...');
   var ok=0, err=0;
   for(var i=0;i<items.length;i++){
     var item = items[i];
     var ep = item.tipo==='factura'?'/facturas/'+item.id+'/asignar':'/entregas/'+item.id+'/asignar';
+    updateProgress('Asignando '+(i+1)+'/'+items.length+'...');
     try{
       await apiFetch(ep,{method:'POST',body:JSON.stringify({user_id:driver.id})});
       var p = state.allPickings.find(function(x){return x.id===item.id&&x.tipo===item.tipo;});
@@ -903,9 +919,33 @@ async function asignarSeleccionados(prev){
       ok++;
     }catch(e){err++;}
   }
+  hideProgress();
   _seleccionados={};
   buildAssignView();
-  showToast(ok+' asignados a '+driver.name+(err?' ('+err+' errores)':''),'ok');
+  showToast(ok+' asignados a '+driver.name+(err?' ('+err+' errores)':''), err?'err':'ok');
+}
+
+// Indicador de progreso (overlay)
+function showProgress(msg){
+  var overlay=document.getElementById('progress-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='progress-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML='<div style="background:var(--surface);padding:1.5rem 2rem;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:.75rem;min-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.3);"><div class="spinner" style="width:32px;height:32px;border-width:3px"></div><div id="progress-msg" style="font-family:var(--rh);font-size:.95rem;font-weight:700;color:var(--text)">'+msg+'</div></div>';
+    document.body.appendChild(overlay);
+  } else {
+    document.getElementById('progress-msg').textContent=msg;
+    overlay.style.display='flex';
+  }
+}
+function updateProgress(msg){
+  var el=document.getElementById('progress-msg');
+  if(el)el.textContent=msg;
+}
+function hideProgress(){
+  var overlay=document.getElementById('progress-overlay');
+  if(overlay)overlay.style.display='none';
 }
 
 function shortName(n){return n.replace(/preventa\s*\d*/i,'PREV').replace(/repartidor\s*\d*/i,'REP');}
@@ -924,10 +964,12 @@ async function desasignarItem(tipo,id){
 async function desasignarSeleccionados(){
   var items=Object.values(_seleccionados);
   if(!items.length)return;
+  showProgress('Desasignando 0/'+items.length+'...');
   var ok=0,err=0;
   for(var i=0;i<items.length;i++){
     var item=items[i];
     var ep=item.tipo==='factura'?'/facturas/'+item.id+'/asignar':'/entregas/'+item.id+'/asignar';
+    updateProgress('Desasignando '+(i+1)+'/'+items.length+'...');
     try{
       await apiFetch(ep,{method:'POST',body:JSON.stringify({user_id:null})});
       var p=state.allPickings.find(function(x){return x.id===item.id&&x.tipo===item.tipo;});
@@ -935,9 +977,10 @@ async function desasignarSeleccionados(){
       ok++;
     }catch(e){err++;}
   }
+  hideProgress();
   _seleccionados={};
   buildAssignView(document.getElementById('assign-search')?document.getElementById('assign-search').value:'');
-  showToast(ok+' desasignados'+(err?' ('+err+' errores)':''),'ok');
+  showToast(ok+' desasignados'+(err?' ('+err+' errores)':''),err?'err':'ok');
 }
 function matchCarrierToDriver(carrier,drivers){
   if(!carrier||!drivers.length)return null;
@@ -1037,6 +1080,39 @@ async function desasignarSelResumen(){
 function todosDateBar(desde,hasta){
   return '<div class="date-filter"><label>Desde</label><input type="date" class="date-input" id="todos-desde" value="'+desde+'"><label>Hasta</label><input type="date" class="date-input" id="todos-hasta" value="'+hasta+'"><button class="btn-filter" onclick="loadTodos()">Buscar</button></div>';
 }
+async function loadAsignadas(){
+  var c=document.getElementById('office-content');
+  c.innerHTML='<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando asignadas\u2026</div></div>';
+  _resumenSel={};updateResumenToolbar();
+  try{
+    var data=await apiFetch('/oficina/asignadas');
+    document.getElementById('office-date').textContent=formatDate(data.fecha);
+    var entregas=data.entregas||[];
+    var pendientes=entregas.filter(function(e){return !e.entregado;});
+    if(!pendientes.length){
+      c.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4CB;</div><div class="empty-title">Sin asignadas pendientes</div><div class="empty-sub">Todos los documentos asignados ya se han entregado</div></div>';
+      return;
+    }
+    // Agrupar por repartidor
+    var grupos={};
+    pendientes.forEach(function(e){
+      var rep=e.repartidor||'Sin repartidor';
+      if(!grupos[rep])grupos[rep]=[];
+      grupos[rep].push(e);
+    });
+    var html='<div class="stats-bar"><div class="stat-card"><div class="stat-num orange">'+pendientes.length+'</div><div class="stat-label">Asignadas pendientes</div></div></div>';
+    Object.keys(grupos).sort().forEach(function(rep){
+      var items=grupos[rep];
+      html+='<div class="rep-group"><div class="rep-header"><div class="rep-name">'+esc(rep)+'</div><div class="rep-progress">'+items.length+' pendientes</div></div>';
+      items.forEach(function(e){html+=renderCard(e,'office');});
+      html+='</div>';
+    });
+    c.innerHTML=html;
+  }catch(e){
+    c.innerHTML='<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
+  }
+}
+
 async function loadTodos(){
   var hoy=new Date().toISOString().slice(0,10);
   var desdeEl=document.getElementById('todos-desde');
