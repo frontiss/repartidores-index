@@ -1186,9 +1186,9 @@ async function loadTodos(){
       var repData=grupos[rep];
       var entregas=repData.entregas;
       var entregadas=entregas.filter(function(e){return e.entregado;}).length;
-      var repId='todos-rep-'+ri;
+      var repId='rep'+ri;
       html+='<div class="rep-group" id="'+repId+'">'
-        +'<div class="rep-header" onclick="toggleTodosRep(\'"+repId+"\')">'
+        +'<div class="rep-header" data-repid="rep'+ri+'" onclick="toggleTodosRep(this.dataset.repid)">'
         +'<span class="rep-arrow">&#x25B6;</span>'
         +'<div class="rep-name">'+esc(rep)+'</div>'
         +'<div class="rep-progress"><span class="done">'+entregadas+'</span> / '+entregas.length+'</div>'
@@ -1205,9 +1205,9 @@ async function loadTodos(){
       Object.keys(dias).sort().reverse().forEach(function(dia,di){
         var items=dias[dia];
         var diaLabel=dia==='Sin fecha'?'Sin fecha':dia.split('-').reverse().join('/');
-        var dayId=repId+'-d'+di;
+        var dayId='day'+ri+'-'+di;
         html+='<div class="todos-day-group" id="'+dayId+'">'
-          +'<div class="todos-day-header" onclick="toggleTodosDay(\'"+dayId+"\')">'
+          +'<div class="todos-day-header" data-dayid="day'+ri+'-'+di+'" onclick="toggleTodosDay(this.dataset.dayid)">'
           +'<span class="todos-day-arrow">&#x25B6;</span>'
           +diaLabel
           +'<span style="font-family:var(--rm);font-size:.65rem;color:var(--muted2);margin-left:.3rem">('+items.length+')</span>'
