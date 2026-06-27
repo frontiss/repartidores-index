@@ -179,7 +179,7 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .rep-progress .done{color:var(--green);font-weight:600;}
 .rep-body{background:var(--bg);padding:.5rem .6rem .6rem;}
 /* Día dentro de rep-body */
-.todos-day-header{padding:.45rem .6rem;font-family:var(--rh);font-size:.82rem;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.05em;cursor:pointer;display:flex;align-items:center;gap:.5rem;background:var(--surface2);border-radius:6px;margin:.3rem 0 .2rem;}
+.todos-day-header{padding:.45rem .6rem;font-family:var(--rm);font-size:.84rem;font-weight:500;color:var(--text);letter-spacing:.02em;cursor:pointer;display:flex;align-items:center;gap:.5rem;background:var(--surface2);border-radius:6px;margin:.3rem 0 .2rem;}
 .todos-day-arrow{font-size:.6rem;color:var(--muted);transition:transform .15s;}
 .todos-day-group.open .todos-day-arrow{transform:rotate(90deg);}
 .todos-day-cards{display:none;}
@@ -730,7 +730,8 @@ async function loadAssignView(){
 }
 
 function buildAssignView(filtro){
-  var pickings=state.allPickings;
+  // Solo mostrar los sin asignar (repartidor_id null/undefined)
+  var pickings=state.allPickings.filter(function(p){return !p.repartidor_id;});
   var lst=document.getElementById('assign-list');
   var q=(filtro||'').toLowerCase().trim();
   if(q){
