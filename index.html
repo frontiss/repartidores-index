@@ -166,13 +166,24 @@ input,textarea{font-family:inherit;-webkit-appearance:none;border-radius:0;}
 .card-checkbox{width:18px;height:18px;border-radius:4px;border:2px solid var(--border);background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .1s,border-color .1s;margin-right:.1rem;}
 .card-checkbox.checked{background:var(--orange);border-color:var(--orange);}
 .delivery-card.sel-active .card-checkbox{display:flex;}
-.rep-group{margin-bottom:1.5rem;}
-.rep-header{display:flex;align-items:center;justify-content:space-between;
-  padding:.7rem .9rem;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:10px;margin-bottom:.5rem;box-shadow:0 1px 3px rgba(0,0,0,.04);}
-.rep-name{font-family:var(--rh);font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.rep-group{margin-bottom:.6rem;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;}
+.rep-group.open .rep-body{display:block;}
+.rep-group:not(.open) .rep-body{display:none;}
+.rep-header{display:flex;align-items:center;gap:.5rem;
+  padding:.6rem .9rem;background:var(--surface);cursor:pointer;user-select:none;transition:background .1s;}
+.rep-header:hover{background:var(--surface2);}
+.rep-arrow{font-size:.7rem;color:var(--muted);transition:transform .2s;flex-shrink:0;}
+.rep-group.open .rep-arrow{transform:rotate(90deg);}
+.rep-name{font-family:var(--rh);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;flex:1;}
 .rep-progress{font-family:var(--rm);font-size:.82rem;color:var(--muted);}
 .rep-progress .done{color:var(--green);font-weight:600;}
+.rep-body{background:var(--bg);padding:.4rem .5rem .5rem;}
+/* Día dentro de rep-body */
+.todos-day-header{padding:.25rem .3rem .1rem;font-family:var(--rh);font-size:.68rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;cursor:pointer;display:flex;align-items:center;gap:.4rem;}
+.todos-day-arrow{font-size:.6rem;color:var(--muted);transition:transform .15s;}
+.todos-day-group.open .todos-day-arrow{transform:rotate(90deg);}
+.todos-day-cards{display:none;}
+.todos-day-group.open .todos-day-cards{display:block;}
 
 /* DATE FILTER */
 .date-filter{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
@@ -1170,26 +1181,42 @@ async function loadTodos(){
       grupos[rep].entregas.push(e);
     });
 
-    Object.keys(grupos).sort().forEach(function(rep){
+    var repKeys=Object.keys(grupos).sort();
+    repKeys.forEach(function(rep,ri){
       var repData=grupos[rep];
       var entregas=repData.entregas;
       var entregadas=entregas.filter(function(e){return e.entregado;}).length;
-      html+='<div class="rep-group"><div class="rep-header"><div class="rep-name">'+esc(rep)+'</div><div class="rep-progress"><span class="done">'+entregadas+'</span> / '+entregas.length+'</div></div>';
+      var repId='todos-rep-'+ri;
+      html+='<div class="rep-group" id="'+repId+'">'
+        +'<div class="rep-header" onclick="toggleTodosRep(\'"+repId+"\')">'
+        +'<span class="rep-arrow">&#x25B6;</span>'
+        +'<div class="rep-name">'+esc(rep)+'</div>'
+        +'<div class="rep-progress"><span class="done">'+entregadas+'</span> / '+entregas.length+'</div>'
+        +'</div>'
+        +'<div class="rep-body">';
 
-      // Sub-agrupar por día (hora_entrega o fecha)
+      // Sub-agrupar por día
       var dias={};
       entregas.forEach(function(e){
         var d=(e.hora_entrega||e.fecha||'').substring(0,10)||'Sin fecha';
         if(!dias[d])dias[d]=[];
         dias[d].push(e);
       });
-      Object.keys(dias).sort().reverse().forEach(function(dia){
+      Object.keys(dias).sort().reverse().forEach(function(dia,di){
         var items=dias[dia];
         var diaLabel=dia==='Sin fecha'?'Sin fecha':dia.split('-').reverse().join('/');
-        html+='<div style="padding:.25rem .75rem .1rem;font-family:var(--rm);font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">'+diaLabel+'</div>';
+        var dayId=repId+'-d'+di;
+        html+='<div class="todos-day-group" id="'+dayId+'">'
+          +'<div class="todos-day-header" onclick="toggleTodosDay(\'"+dayId+"\')">'
+          +'<span class="todos-day-arrow">&#x25B6;</span>'
+          +diaLabel
+          +'<span style="font-family:var(--rm);font-size:.65rem;color:var(--muted2);margin-left:.3rem">('+items.length+')</span>'
+          +'</div>'
+          +'<div class="todos-day-cards">';
         items.forEach(function(e){html+=renderCard(e,'office');});
+        html+='</div></div>';
       });
-      html+='</div>';
+      html+='</div></div>';
     });
 
     c.innerHTML=html;
@@ -1200,6 +1227,15 @@ async function loadTodos(){
   }
 }
 
+
+function toggleTodosRep(id){
+  var el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+}
+function toggleTodosDay(id){
+  var el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+}
 
 // DRIVER
 async function loadDriverDeliveries(){
