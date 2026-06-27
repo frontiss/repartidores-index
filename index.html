@@ -1148,7 +1148,7 @@ async function loadAsignadas(){
 }
 
 async function loadTodos(){
-  var hoy=new Date().toISOString().slice(0,10);
+  var hoy=localDateStr();
   var desdeEl=document.getElementById('todos-desde');
   var hastaEl=document.getElementById('todos-hasta');
   var desde=desdeEl?desdeEl.value:hoy;
@@ -1158,20 +1158,48 @@ async function loadTodos(){
   try{
     var data=await apiFetch('/oficina/todos?fecha_desde='+desde+'&fecha_hasta='+hasta);
     var all=data.entregas||[];
-    var pending=all.filter(function(e){return!e.entregado;});
-    var done=all.filter(function(e){return e.entregado;});
     var html=todosDateBar(desde,hasta);
     html+='<div class="stats-bar" style="margin-top:.75rem"><div class="stat-card"><div class="stat-num orange">'+data.total+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num green">'+data.entregadas+'</div><div class="stat-label">Entregados</div></div><div class="stat-card"><div class="stat-num red">'+data.pendientes+'</div><div class="stat-label">Pendientes</div></div></div>';
-    if(pending.length){html+='<div class="section-header"><div class="section-title">Pendientes</div><div class="section-count">'+pending.length+'</div></div>';pending.forEach(function(e){html+=renderCard(e,'office');});}
-    if(done.length){html+='<div class="section-header" style="margin-top:1rem"><div class="section-title">Entregados</div><div class="section-count">'+done.length+'</div></div>';done.forEach(function(e){html+=renderCard(e,'office');});}
-    if(!all.length)html+='<div class="empty-state"><div class="empty-icon">&#x1F4EB;</div><div class="empty-title">Sin entregas en este periodo</div></div>';
+    if(!all.length){html+='<div class="empty-state"><div class="empty-icon">&#x1F4EB;</div><div class="empty-title">Sin entregas en este periodo</div></div>';c.innerHTML=html;return;}
+
+    // Agrupar por repartidor
+    var grupos={};
+    all.forEach(function(e){
+      var rep=e.repartidor||'Sin repartidor';
+      if(!grupos[rep])grupos[rep]={repartidor_id:e.repartidor_id,entregas:[]};
+      grupos[rep].entregas.push(e);
+    });
+
+    Object.keys(grupos).sort().forEach(function(rep){
+      var repData=grupos[rep];
+      var entregas=repData.entregas;
+      var entregadas=entregas.filter(function(e){return e.entregado;}).length;
+      html+='<div class="rep-group"><div class="rep-header"><div class="rep-name">'+esc(rep)+'</div><div class="rep-progress"><span class="done">'+entregadas+'</span> / '+entregas.length+'</div></div>';
+
+      // Sub-agrupar por día (hora_entrega o fecha)
+      var dias={};
+      entregas.forEach(function(e){
+        var d=(e.hora_entrega||e.fecha||'').substring(0,10)||'Sin fecha';
+        if(!dias[d])dias[d]=[];
+        dias[d].push(e);
+      });
+      Object.keys(dias).sort().reverse().forEach(function(dia){
+        var items=dias[dia];
+        var diaLabel=dia==='Sin fecha'?'Sin fecha':dia.split('-').reverse().join('/');
+        html+='<div style="padding:.25rem .75rem .1rem;font-family:var(--rm);font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">'+diaLabel+'</div>';
+        items.forEach(function(e){html+=renderCard(e,'office');});
+      });
+      html+='</div>';
+    });
+
     c.innerHTML=html;
-    document.getElementById('todos-desde').value=desde;
-    document.getElementById('todos-hasta').value=hasta;
+    if(document.getElementById('todos-desde'))document.getElementById('todos-desde').value=desde;
+    if(document.getElementById('todos-hasta'))document.getElementById('todos-hasta').value=hasta;
   }catch(e){
     c.innerHTML=todosDateBar(desde,hasta)+'<div class="empty-state"><div class="empty-icon">&#x26A0;&#xFE0F;</div><div class="empty-title">Error</div><div class="empty-sub">'+e.message+'</div></div>';
   }
 }
+
 
 // DRIVER
 async function loadDriverDeliveries(){
