@@ -716,7 +716,7 @@ function driverPrevNum(driver){
 
 async function loadAssignView(){
   var lst = document.getElementById('assign-list');
-  lst.innerHTML = '<div style="display:flex;align-items:center;gap:.5rem;padding:1rem"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:.8rem;color:var(--muted)">Cargando\u2026</span></div>';
+  lst.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><div class="loading-text">Cargando\u2026</div></div>';
   try {
     var data = await apiFetch('/oficina/asignacion');
     document.getElementById('office-date').textContent = formatDate(data.fecha);
