@@ -1246,9 +1246,18 @@ async function loadDriverDeliveries(){
     document.getElementById('driver-date').textContent=formatDate(data.fecha);
     var entregas=data.entregas||[];
     var pending=entregas.filter(function(e){return!e.entregado;});
-    var done=entregas.filter(function(e){return e.entregado;});
-    if(!entregas.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4E6;</div><div class="empty-title">Sin repartos hoy</div><div class="empty-sub">No tienes entregas asignadas</div></div>';return;}
-    var html='<div class="stats-bar"><div class="stat-card"><div class="stat-num orange">'+entregas.length+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num green">'+done.length+'</div><div class="stat-label">Entregados</div></div><div class="stat-card"><div class="stat-num red">'+pending.length+'</div><div class="stat-label">Pendientes</div></div></div>';
+    var hoy=localDateStr();
+    // Solo contar entregados de HOY para las estadísticas
+    var doneHoy=entregas.filter(function(e){
+      return e.entregado&&(e.hora_entrega||'').substring(0,10)===hoy;
+    });
+    // Si no hay pendientes ni entregados hoy -> sin repartos
+    if(!pending.length&&!doneHoy.length){
+      list.innerHTML='<div class="empty-state"><div class="empty-icon">&#x1F4E6;</div><div class="empty-title">Sin repartos hoy</div><div class="empty-sub">No tienes entregas asignadas</div></div>';
+      return;
+    }
+    var total=pending.length+doneHoy.length;
+    var html='<div class="stats-bar"><div class="stat-card"><div class="stat-num orange">'+total+'</div><div class="stat-label">Total</div></div><div class="stat-card"><div class="stat-num green">'+doneHoy.length+'</div><div class="stat-label">Entregados</div></div><div class="stat-card"><div class="stat-num red">'+pending.length+'</div><div class="stat-label">Pendientes</div></div></div>';
     if(pending.length){html+='<div class="section-header"><div class="section-title">Pendientes</div><div class="section-count">'+pending.length+'</div></div>';pending.forEach(function(e){html+=renderCard(e,'driver');});}
     if(!pending.length){html+='<div class="empty-state"><div class="empty-icon">&#x2705;</div><div class="empty-title">Todo entregado</div></div>';}
     list.innerHTML=html;
