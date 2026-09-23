@@ -1449,8 +1449,10 @@ async function confirmarEntrega(){
   var gps=await getGPS();
   try{
     var ep=state.pickingTipo==='factura'?'/facturas/'+state.pickingId+'/entregar':'/entregas/'+state.pickingId+'/entregar';
-    await apiFetch(ep,{method:'POST',body:JSON.stringify({cobrado:cobrado,importe:cobrado?importe:null,forma_pago:cobrado?state.formaPago:null,nota:nota||null,lat:gps.lat,lng:gps.lng})});
-    closeModal();showToast('Entrega confirmada \u2713','ok');
+    var res=await apiFetch(ep,{method:'POST',body:JSON.stringify({cobrado:cobrado,importe:cobrado?importe:null,forma_pago:cobrado?state.formaPago:null,nota:nota||null,lat:gps.lat,lng:gps.lng})});
+    closeModal();
+    if(res&&res.ya_pagada)showToast('Entregada. Factura ya estaba pagada en Odoo','ok');
+    else showToast('Entrega confirmada \u2713','ok');
     if(state.role==='repartidor')loadDriverDeliveries();else refreshCurrentTab();
   }catch(e){showToast(e.message,'err');}
   finally{btn.disabled=false;btn.textContent='\u2713 Entregado';}
